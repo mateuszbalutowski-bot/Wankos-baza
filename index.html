@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Wankos Intel Panel (Supabase)</title>
+  <title>Wankos Intel Panel</title>
 
   <style>
     :root{
@@ -59,7 +59,7 @@
       margin:0;
       font-size:16px;
       letter-spacing:0.2px;
-      font-weight:900;
+      font-weight:800;
     }
 
     .subtitle{
@@ -82,7 +82,7 @@
       border:1px solid var(--border);
       background: rgba(2,6,23,0.35);
       color: var(--muted);
-      font-weight:900;
+      font-weight:800;
       font-size:12px;
       user-select:none;
       transition:.15s;
@@ -231,10 +231,8 @@
     .item{
       padding:12px 12px;
       border-bottom:1px solid var(--border);
-      cursor:pointer;
       transition:.12s;
     }
-    .item:hover{ background: rgba(255,255,255,0.03); }
 
     .item:last-child{ border-bottom:none; }
 
@@ -250,15 +248,6 @@
       font-size:11px;
       color:var(--muted);
       line-height:1.4;
-    }
-
-    .collapse{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(2,6,23,0.35);
-      display:none;
     }
 
     .toast{
@@ -287,34 +276,37 @@
       color: rgba(96,165,250,0.95);
       text-decoration: underline;
     }
-    .clickSource:hover{ filter: brightness(1.2); }
+    .clickSource:hover{
+      filter: brightness(1.2);
+    }
 
     .clickPlayer{
       cursor:pointer;
       color: rgba(52,211,153,0.95);
       text-decoration: underline;
     }
-    .clickPlayer:hover{ filter: brightness(1.2); }
-
-    .hidden{ display:none !important; }
+    .clickPlayer:hover{
+      filter: brightness(1.2);
+    }
   </style>
 </head>
 
 <body>
+
 <header>
   <div class="wrap topbar">
     <div>
       <h1>Wankos Intel Panel</h1>
       <div class="subtitle">
-        Supabase Tribe DB • tylko własne wioski w analizie • wspólna powtarzalność ataków
+        Panel plemienny do analizy ataków + baza tokenów OFF/DEFF.
       </div>
     </div>
 
-    <div class="tabs hidden" id="mainTabs">
-      <div class="tab active" data-tab="labels">Etykiety</div>
+    <div class="tabs">
+      <div class="tab active" data-tab="login">Logowanie</div>
+      <div class="tab" data-tab="labels">Etykiety Ataków</div>
       <div class="tab" data-tab="analysis">Analiza</div>
-      <div class="tab" data-tab="enemydb">Baza Tokenów</div>
-      <div class="tab" data-tab="admin">Panel Admina</div>
+      <div class="tab" data-tab="enemydb">Baza Wroga</div>
       <div class="tab" data-tab="settings">Ustawienia</div>
     </div>
   </div>
@@ -323,69 +315,60 @@
 <main>
   <div class="wrap">
 
-    <!-- LOGIN -->
+    <!-- LOGIN TAB -->
     <div class="tabPanel" id="tab-login">
       <div class="card">
         <h2>
-          🔐 Logowanie / Rejestracja
-          <span class="tag blue">Wankos2026</span>
+          🔐 Logowanie
+          <span id="loginStatus" class="tag red">NIEZALOGOWANY</span>
         </h2>
 
         <div class="hint">
-          Załóż konto lub zaloguj się. Nick = nick w grze.<br>
-          Rejestracja wymaga kodu plemienia.
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="row">
-          <input id="loginNick" placeholder="Nick w grze (np. Jupiter)" />
-          <input id="loginPass" type="password" placeholder="Hasło" />
-        </div>
-
-        <div class="row">
-          <button id="btnLogin">Zaloguj</button>
-          <button id="btnLogout" class="btnDanger hidden">Wyloguj</button>
+          Zaloguj się nickiem z gry. Dostęp do panelu mają tylko osoby z kodem plemienia.
+          <br><b>Kod plemienia:</b> <span class="mono">Wankos2026</span>
         </div>
 
         <div class="divider"></div>
 
         <h2>🆕 Rejestracja</h2>
         <div class="row">
-          <input id="regNick" placeholder="Nick w grze" />
-          <input id="regPass" type="password" placeholder="Hasło" />
-          <input id="regTribeCode" placeholder="Kod plemienia (Wankos2026)" />
-        </div>
-
-        <div class="row">
+          <input id="regNick" placeholder="Nick z gry..." />
+          <input id="regPass" type="password" placeholder="Hasło..." />
+          <input id="regCode" placeholder="Kod plemienia..." />
           <button id="btnRegister" class="btn2">Załóż konto</button>
         </div>
 
         <div class="divider"></div>
 
-        <div class="hint">
-          Po zalogowaniu etykiety ataków zapisują się do bazy plemienia.
+        <h2>🔑 Logowanie</h2>
+        <div class="row">
+          <input id="loginNick" placeholder="Nick..." />
+          <input id="loginPass" type="password" placeholder="Hasło..." />
+          <button id="btnLogin" class="btn2">Zaloguj</button>
+          <button id="btnLogout" class="btnDanger">Wyloguj</button>
         </div>
+
       </div>
     </div>
 
-    <!-- LABELS -->
-    <div class="tabPanel hidden" id="tab-labels">
+    <!-- LABELS TAB -->
+    <div class="tabPanel" id="tab-labels" style="display:none;">
       <div class="card">
         <h2>
           🏷️ Etykiety Ataków
-          <span class="tag green" id="userTag">USER</span>
+          <span class="tag blue">Tribe DB</span>
         </h2>
 
         <div class="hint">
-          Wklej etykiety z gry. System automatycznie zapisze je do bazy plemienia.
-          Wioski obrońcy (defender) zostaną przypisane do Twojego konta.
+          Wklej swoje etykiety z gry. System:
+          <br>✅ zapisze je w bazie plemienia
+          <br>✅ przypisze obrońców do Twojego konta
         </div>
 
-        <textarea id="labelsInput" placeholder="Wklej etykiety tutaj..."></textarea>
+        <textarea id="labelsInput" placeholder="Wklej etykiety ataków tutaj..."></textarea>
 
         <div class="row">
-          <button id="btnUploadLabels" class="btn2">📥 Wyślij do bazy plemienia</button>
+          <button id="btnUploadLabels" class="btn2">📥 Wyślij etykiety</button>
           <button id="btnClearLabels" class="btnGhost">🧹 Wyczyść</button>
         </div>
 
@@ -398,102 +381,72 @@
       </div>
     </div>
 
-    <!-- ANALYSIS -->
-    <div class="tabPanel hidden" id="tab-analysis">
+    <!-- ANALYSIS TAB -->
+    <div class="tabPanel" id="tab-analysis" style="display:none;">
       <div class="card">
         <h2>
-          📊 Analiza (tylko Twoje wioski)
+          📊 Analiza ataków (Twoje wioski)
           <span class="tag yellow">Threat Engine</span>
         </h2>
 
         <div class="hint">
-          Ranking zagrożonych wiosek, ale tylko defender = Twoje konto.<br>
-          Powtarzalność źródeł jest liczona z całej bazy plemienia.
+          Pokazuje tylko Twoje wioski (defender), ale powtarzalność źródeł liczona jest z całej bazy plemienia.
         </div>
 
         <div class="row">
-          <button id="btnRunThreat" class="btn2">⚡ Przelicz analizę</button>
+          <button id="btnRunAnalysis" class="btn2">⚡ Przelicz analizę</button>
         </div>
 
         <div id="threatBoard" class="listBox">
-          <div class="item small">Brak analizy.</div>
+          <div class="item small">Brak danych. Wklej etykiety w zakładce "Etykiety Ataków".</div>
         </div>
       </div>
     </div>
 
-    <!-- ENEMY TOKENS -->
-    <div class="tabPanel hidden" id="tab-enemydb">
+    <!-- ENEMY DB TAB -->
+    <div class="tabPanel" id="tab-enemydb" style="display:none;">
       <div class="card">
         <h2>
-          🏰 Baza Tokenów (plemienna)
-          <span class="tag blue">Supabase</span>
+          🏰 Baza Wiosek Wroga (tokeny)
+          <span class="tag green">Supabase</span>
         </h2>
 
         <div class="hint">
-          To jest wspólna baza tokenów plemienia.
+          Tutaj będą tokeny OFF/DEFF (w przyszłości). Na razie jest tylko placeholder.
         </div>
 
-        <div class="row">
-          <input id="enemySearch" placeholder="Szukaj coords (np. 626|471)" class="mono"/>
-          <button id="btnEnemySearch">Szukaj</button>
-        </div>
-
-        <div id="enemyList" class="listBox"></div>
-
-        <div class="divider"></div>
-
-        <h2>🎯 Profil wioski</h2>
-        <div id="enemyProfile" class="listBox">
-          <div class="item small">Kliknij wioskę aby zobaczyć szczegóły.</div>
+        <div class="listBox">
+          <div class="item small">W tej wersji jeszcze nie dodajemy tokenów do Supabase.</div>
         </div>
       </div>
     </div>
 
-    <!-- ADMIN -->
-    <div class="tabPanel hidden" id="tab-admin">
-      <div class="card">
-        <h2>
-          👑 Panel Admina
-          <span class="tag red">ADMIN ONLY</span>
-        </h2>
-
-        <div class="hint">
-          Tu admin widzi użytkowników i może nadawać admina innym.
-        </div>
-
-        <div class="divider"></div>
-
-        <h2>👥 Użytkownicy</h2>
-        <div id="adminUsersList" class="listBox">
-          <div class="item small">Brak danych.</div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="row">
-          <button id="btnRefreshAdmin" class="btn2">🔄 Odśwież listę</button>
-          <button id="btnDeleteAllLabels" class="btnDanger">🗑️ Usuń WSZYSTKIE etykiety</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- SETTINGS -->
-    <div class="tabPanel hidden" id="tab-settings">
+    <!-- SETTINGS TAB -->
+    <div class="tabPanel" id="tab-settings" style="display:none;">
       <div class="card">
         <h2>
           ⚙️ Ustawienia
-          <span class="tag blue">Konto</span>
+          <span id="adminTag" class="tag red">USER</span>
         </h2>
 
         <div class="hint">
-          Możesz usunąć tylko swoje etykiety.
+          Użytkownik może usuwać swoje etykiety. Admin może zarządzać bazą plemienia.
         </div>
 
         <div class="divider"></div>
 
+        <h2>🧹 Moje dane</h2>
         <div class="row">
-          <button id="btnDeleteMyLabels" class="btnDanger">🗑️ Usuń moje etykiety</button>
+          <button id="btnDeleteMyLabels" class="btnDanger">Usuń moje etykiety</button>
         </div>
+
+        <div class="divider"></div>
+
+        <h2>👑 Panel admina</h2>
+        <div id="adminPanel" class="listBox">
+          <div class="item small">Brak dostępu.</div>
+        </div>
+
       </div>
     </div>
 
@@ -502,6 +455,7 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -509,19 +463,40 @@
 const SUPABASE_URL = "https://cixrktawkfxaexhzhnho.supabase.co";
 const SUPABASE_KEY = "sb_publishable_kUYmC66z6c9g3qrj0hx2Zg_ZV__s0zA";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const TRIBE_CODE = "Wankos2026";
-const SESSION_KEY = "wankos_session_user";
+
+/* ===================== SESSION ===================== */
+const SESSION_KEY = "wankos_session_v1";
+
+function saveSession(user){
+  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+}
+function loadSession(){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){
+    return null;
+  }
+}
+function clearSession(){
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function currentUser(){
+  return loadSession();
+}
 
 /* ===================== UTIL ===================== */
 function toast(title, msg){
   const t = document.getElementById("toast");
   t.innerHTML = `<strong>${escapeHtml(title)}</strong>${escapeHtml(msg)}`;
   t.style.display = "block";
-  setTimeout(()=>{ t.style.display="none"; }, 2500);
+  setTimeout(()=>{ t.style.display="none"; }, 3000);
 }
-
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
@@ -538,67 +513,109 @@ function groupBy(arr, keyFn){
   return m;
 }
 
-function nowISO(){ return new Date().toISOString(); }
-
-/* ===================== AUTH (LOCAL SESSION) ===================== */
-function getSession(){
-  try{
-    const raw = localStorage.getItem(SESSION_KEY);
-    if(!raw) return null;
-    return JSON.parse(raw);
-  }catch(e){ return null; }
-}
-
-function setSession(user){
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-}
-
-function clearSession(){
-  localStorage.removeItem(SESSION_KEY);
-}
-
-function isLoggedIn(){
-  return !!getSession();
-}
-
-function currentNick(){
-  const s = getSession();
-  return s ? s.nick : null;
-}
-
-function isAdmin(){
-  const s = getSession();
-  return s ? s.is_admin === true : false;
-}
-
-/* ===================== UI ===================== */
-function showTabs(){
-  document.getElementById("mainTabs").classList.remove("hidden");
-  document.getElementById("tab-login").classList.add("hidden");
-}
-
-function showLogin(){
-  document.getElementById("mainTabs").classList.add("hidden");
-  document.getElementById("tab-login").classList.remove("hidden");
-
-  document.querySelectorAll(".tabPanel").forEach(p=>{
-    if(p.id !== "tab-login") p.classList.add("hidden");
-  });
-}
-
+/* ===================== TABS ===================== */
 function switchTab(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.querySelectorAll(".tabPanel").forEach(p=>p.classList.add("hidden"));
+  document.querySelectorAll(".tabPanel").forEach(p=>p.style.display="none");
 
   document.querySelector(`.tab[data-tab="${name}"]`).classList.add("active");
-  document.getElementById("tab-"+name).classList.remove("hidden");
+  document.getElementById("tab-"+name).style.display="block";
 
-  if(name === "analysis") renderThreatBoard();
-  if(name === "enemydb") renderEnemyDB();
-  if(name === "admin") renderAdminUsers();
+  if(name === "settings") updateSettingsUI();
 }
 
-/* ===================== PARSER ETYKIET ===================== */
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click", ()=> switchTab(tab.getAttribute("data-tab")));
+});
+
+/* ===================== AUTH ===================== */
+async function registerUser(){
+  const nick = document.getElementById("regNick").value.trim();
+  const pass = document.getElementById("regPass").value.trim();
+  const code = document.getElementById("regCode").value.trim();
+
+  if(!nick || !pass || !code){
+    toast("Błąd", "Wpisz nick, hasło i kod plemienia.");
+    return;
+  }
+
+  if(code !== TRIBE_CODE){
+    toast("Błąd", "Zły kod plemienia.");
+    return;
+  }
+
+  const { data: existing } = await supa
+    .from("users")
+    .select("id")
+    .eq("nick", nick)
+    .maybeSingle();
+
+  if(existing){
+    toast("Błąd", "Taki nick już istnieje.");
+    return;
+  }
+
+  const { error } = await supa
+    .from("users")
+    .insert([{ nick, password: pass, is_admin:false }]);
+
+  if(error){
+    toast("Błąd", "Nie udało się założyć konta.");
+    console.error(error);
+    return;
+  }
+
+  toast("OK", "Konto założone. Teraz się zaloguj.");
+}
+
+async function loginUser(){
+  const nick = document.getElementById("loginNick").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+
+  if(!nick || !pass){
+    toast("Błąd", "Podaj nick i hasło.");
+    return;
+  }
+
+  const { data, error } = await supa
+    .from("users")
+    .select("*")
+    .eq("nick", nick)
+    .eq("password", pass)
+    .maybeSingle();
+
+  if(error || !data){
+    toast("Błąd", "Niepoprawny login lub hasło.");
+    return;
+  }
+
+  saveSession(data);
+  toast("Zalogowano", `Witaj ${nick}!`);
+
+  updateLoginUI();
+  switchTab("labels");
+}
+
+function logoutUser(){
+  clearSession();
+  toast("Wylogowano", "Sesja usunięta.");
+  updateLoginUI();
+  switchTab("login");
+}
+
+function updateLoginUI(){
+  const s = currentUser();
+  const status = document.getElementById("loginStatus");
+  if(!s){
+    status.className = "tag red";
+    status.textContent = "NIEZALOGOWANY";
+  }else{
+    status.className = "tag green";
+    status.textContent = "ZALOGOWANY: " + s.nick;
+  }
+}
+
+/* ===================== PARSER LABELS ===================== */
 function parseEnemyLabels(text){
   const lines = text.split("\n").map(x=>x.trim()).filter(Boolean);
   const attacks = [];
@@ -615,14 +632,16 @@ function parseEnemyLabels(text){
 
     if(!line.includes("[command]attack[/command]")) continue;
 
-    const coordsMatches = [...line.matchAll(/\[coord\](\d{1,3}\|\d{1,3})\[\/coord\]/g)].map(m=>m[1]);
-    const source = coordsMatches.length > 0 ? coordsMatches[0] : null;
+    const coordsMatches = [...line.matchAll(/\[coord\](\d{1,3}\|\d{1,3})\[\/coord\]/g)];
+    const source = coordsMatches.length >= 1 ? coordsMatches[0][1] : null;
 
     const playerMatch = line.match(/\[player\](.*?)\[\/player\]/);
     const player = playerMatch ? playerMatch[1] : "UNKNOWN";
 
     const arrivalMatch = line.match(/Czas przybycia:\s*(\d{2}\.\d{2}\.\d{2}\s+\d{2}:\d{2}:\d{2})/);
     const arrival = arrivalMatch ? arrivalMatch[1] : null;
+
+    if(!currentDefender) continue;
 
     attacks.push({
       defender: currentDefender,
@@ -636,395 +655,15 @@ function parseEnemyLabels(text){
   return attacks;
 }
 
-/* ===================== SUPABASE DB OPS ===================== */
-async function supaLogin(nick, pass){
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("nick", nick)
-    .eq("password", pass)
-    .limit(1);
-
-  if(error) throw error;
-  if(!data || data.length === 0) return null;
-  return data[0];
-}
-
-async function supaRegister(nick, pass){
-  const { data, error } = await supabase
-    .from("users")
-    .insert([{ nick, password: pass, is_admin: false }])
-    .select()
-    .limit(1);
-
-  if(error) throw error;
-  return data[0];
-}
-
-async function supaUploadLabels(labels){
-  const nick = currentNick();
-  const rows = labels.map(a=>({
-    owner_nick: nick,
-    defender: a.defender,
-    source: a.source,
-    player: a.player,
-    arrival: a.arrival,
-    raw: a.raw
-  }));
-
-  const { error } = await supabase.from("attack_labels").insert(rows);
-  if(error) throw error;
-}
-
-async function supaGetMyLabels(){
-  const nick = currentNick();
-  const { data, error } = await supabase
-    .from("attack_labels")
-    .select("*")
-    .eq("owner_nick", nick);
-
-  if(error) throw error;
-  return data || [];
-}
-
-async function supaGetAllLabels(){
-  const { data, error } = await supabase
-    .from("attack_labels")
-    .select("*");
-
-  if(error) throw error;
-  return data || [];
-}
-
-async function supaDeleteMyLabels(){
-  const nick = currentNick();
-  const { error } = await supabase
-    .from("attack_labels")
-    .delete()
-    .eq("owner_nick", nick);
-
-  if(error) throw error;
-}
-
-async function supaDeleteAllLabels(){
-  const { error } = await supabase
-    .from("attack_labels")
-    .delete()
-    .neq("owner_nick", "___never___");
-
-  if(error) throw error;
-}
-
-async function supaGetUsers(){
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .order("created_at", { ascending: true });
-
-  if(error) throw error;
-  return data || [];
-}
-
-async function supaSetAdmin(nick, val){
-  const { error } = await supabase
-    .from("users")
-    .update({ is_admin: val })
-    .eq("nick", nick);
-
-  if(error) throw error;
-}
-
-/* ===================== ANALYSIS ===================== */
-function computeSourceRepeatability(allAttacks){
-  const bySource = groupBy(allAttacks.filter(a=>a.source), a=>a.source);
-  const map = {};
-  for(const s in bySource){
-    map[s] = bySource[s].length;
-  }
-  return map;
-}
-
-async function renderThreatBoard(){
-  const board = document.getElementById("threatBoard");
-  board.innerHTML = `<div class="item small">⏳ Pobieranie danych z Supabase...</div>`;
-
-  try{
-    const myLabels = await supaGetMyLabels();
-    const allLabels = await supaGetAllLabels();
-
-    if(myLabels.length === 0){
-      board.innerHTML = `<div class="item small">Brak Twoich etykiet w bazie.</div>`;
-      return;
-    }
-
-    const repeatMap = computeSourceRepeatability(allLabels);
-
-    const byDef = groupBy(myLabels.filter(a=>a.defender), a=>a.defender);
-    const defenders = Object.keys(byDef);
-
-    const results = defenders.map(def=>{
-      const attacks = byDef[def];
-      const uniqueSources = [...new Set(attacks.map(a=>a.source).filter(Boolean))];
-
-      let score = 0;
-      score += Math.min(60, attacks.length * 6);
-      score += Math.min(40, uniqueSources.length * 7);
-
-      const maxRepeat = Math.max(0, ...uniqueSources.map(s => repeatMap[s] || 0));
-      if(maxRepeat >= 6) score += 15;
-      if(maxRepeat >= 12) score += 20;
-
-      score = Math.max(0, Math.min(100, score));
-
-      let verdict = "LOW";
-      if(score >= 80) verdict = "CRITICAL";
-      else if(score >= 55) verdict = "HIGH";
-      else if(score >= 30) verdict = "MEDIUM";
-
-      return { defender:def, attacks, score, verdict, maxRepeat };
-    });
-
-    results.sort((a,b)=> b.score - a.score);
-
-    let html = "";
-    for(const r of results){
-      const color = r.verdict === "CRITICAL" ? "red" :
-                    r.verdict === "HIGH" ? "yellow" :
-                    r.verdict === "MEDIUM" ? "yellow" : "green";
-
-      html += `
-        <div class="item" data-def="${r.defender}">
-          <div class="inline">
-            <div>
-              <div class="mono" style="font-weight:900;">${r.defender}</div>
-              <div class="small">
-                Ataków: <b class="mono">${r.attacks.length}</b>
-                • Źródeł: <b class="mono">${new Set(r.attacks.map(x=>x.source)).size}</b>
-                • Max repeat: <b class="mono">${r.maxRepeat}</b>
-              </div>
-            </div>
-            <span class="tag ${color}">${r.verdict} ${Math.round(r.score)}%</span>
-          </div>
-
-          <div class="collapse"></div>
-        </div>
-      `;
-    }
-
-    board.innerHTML = html;
-
-    board.querySelectorAll("[data-def]").forEach(item=>{
-      item.addEventListener("click", ()=>{
-        const def = item.getAttribute("data-def");
-        const collapse = item.querySelector(".collapse");
-
-        if(collapse.style.display === "block"){
-          collapse.style.display = "none";
-          collapse.innerHTML = "";
-          return;
-        }
-
-        const list = byDef[def];
-
-        const attacksHtml = list.map(a=>{
-          const src = a.source || "???";
-          const rep = repeatMap[src] || 1;
-
-          return `
-            <div style="padding:10px;border-bottom:1px solid var(--border);">
-              <div class="mono">
-                <b class="clickSource" data-src="${src}">${src}</b> → <b>${def}</b>
-              </div>
-              <div class="small">
-                Gracz: <b class="clickPlayer" data-player="${escapeHtml(a.player||"UNKNOWN")}">${escapeHtml(a.player||"UNKNOWN")}</b>
-                • Przybycie: <span class="mono">${a.arrival||"??"}</span>
-              </div>
-              <div class="small">
-                Powtarzalność tej wioski w całym plemieniu: <b class="mono">${rep}</b>
-              </div>
-              <div class="small mono" style="opacity:.65;margin-top:6px;">${escapeHtml(a.raw)}</div>
-            </div>
-          `;
-        }).join("");
-
-        collapse.innerHTML = attacksHtml;
-        collapse.style.display = "block";
-
-        collapse.querySelectorAll(".clickPlayer").forEach(el=>{
-          el.addEventListener("click", (e)=>{
-            e.stopPropagation();
-
-            const player = el.getAttribute("data-player");
-            const playerAttacks = allLabels.filter(x => (x.player||"UNKNOWN") === player);
-            const byVillage = groupBy(playerAttacks.filter(x=>x.source), x=>x.source);
-
-            let html = `
-              <div style="padding:10px;border-bottom:1px solid var(--border);">
-                <div class="mono" style="font-weight:900;">Gracz: ${escapeHtml(player)}</div>
-                <div class="small">Łącznie ataków w plemieniu: <b class="mono">${playerAttacks.length}</b></div>
-              </div>
-            `;
-
-            const villages = Object.keys(byVillage).sort((a,b)=> byVillage[b].length - byVillage[a].length);
-            for(const v of villages){
-              html += `
-                <div class="item" style="border-bottom:1px solid var(--border);">
-                  <div class="inline">
-                    <div class="mono"><b>${v}</b></div>
-                    <span class="tag blue">${byVillage[v].length} ataków</span>
-                  </div>
-                </div>
-              `;
-            }
-
-            collapse.innerHTML = html;
-          });
-        });
-
-      });
-    });
-
-  }catch(e){
-    board.innerHTML = `<div class="item small">❌ Błąd: ${escapeHtml(e.message)}</div>`;
-  }
-}
-
-/* ===================== ADMIN PANEL ===================== */
-async function renderAdminUsers(){
-  const box = document.getElementById("adminUsersList");
-
-  if(!isAdmin()){
-    box.innerHTML = `<div class="item small">Brak uprawnień.</div>`;
+/* ===================== UPLOAD LABELS ===================== */
+async function uploadLabels(){
+  const user = currentUser();
+  if(!user){
+    toast("Brak dostępu", "Zaloguj się.");
+    switchTab("login");
     return;
   }
 
-  box.innerHTML = `<div class="item small">⏳ Pobieranie użytkowników...</div>`;
-
-  try{
-    const users = await supaGetUsers();
-
-    let html = "";
-    for(const u of users){
-      const tag = u.is_admin ? `<span class="tag green">ADMIN</span>` : `<span class="tag blue">USER</span>`;
-
-      html += `
-        <div class="item" data-user="${u.nick}">
-          <div class="inline">
-            <div>
-              <div class="mono"><b class="clickPlayer" data-player="${escapeHtml(u.nick)}">${escapeHtml(u.nick)}</b></div>
-              <div class="small">Utworzono: ${new Date(u.created_at).toLocaleString()}</div>
-            </div>
-            ${tag}
-          </div>
-        </div>
-      `;
-    }
-
-    box.innerHTML = html;
-
-    box.querySelectorAll("[data-user]").forEach(el=>{
-      el.addEventListener("click", async ()=>{
-        const nick = el.getAttribute("data-user");
-
-        if(nick === currentNick()){
-          toast("Admin", "Nie możesz zmieniać swoich uprawnień tutaj.");
-          return;
-        }
-
-        const makeAdmin = confirm(`Nadać ADMIN dla ${nick}? (OK=TAK, Cancel=Zabierz admina)`);
-        await supaSetAdmin(nick, makeAdmin);
-
-        toast("Admin", makeAdmin ? `Nadano ADMIN dla ${nick}` : `Zabrano ADMIN dla ${nick}`);
-        renderAdminUsers();
-      });
-    });
-
-  }catch(e){
-    box.innerHTML = `<div class="item small">❌ Błąd: ${escapeHtml(e.message)}</div>`;
-  }
-}
-
-/* ===================== TOKENS (PLACEHOLDER) ===================== */
-async function renderEnemyDB(){
-  document.getElementById("enemyList").innerHTML =
-    `<div class="item small">Tokeny będą dodane w kolejnym kroku (na razie skupiamy się na etykietach).</div>`;
-}
-
-function renderEnemyProfile(coords){
-  document.getElementById("enemyProfile").innerHTML =
-    `<div class="item small">Profil tokenów jeszcze nie jest aktywny.</div>`;
-}
-
-/* ===================== EVENTS ===================== */
-document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click", ()=> switchTab(tab.getAttribute("data-tab")));
-});
-
-document.getElementById("btnClearLabels").addEventListener("click", ()=>{
-  document.getElementById("labelsInput").value = "";
-  document.getElementById("labelsSummary").innerHTML = `<div class="item small">Brak danych.</div>`;
-});
-
-/* LOGIN */
-document.getElementById("btnLogin").addEventListener("click", async ()=>{
-  const nick = document.getElementById("loginNick").value.trim();
-  const pass = document.getElementById("loginPass").value.trim();
-
-  if(!nick || !pass){
-    toast("Logowanie", "Podaj nick i hasło.");
-    return;
-  }
-
-  try{
-    const user = await supaLogin(nick, pass);
-    if(!user){
-      toast("Logowanie", "Błędny nick lub hasło.");
-      return;
-    }
-
-    setSession(user);
-
-    toast("Logowanie", `Zalogowano jako ${user.nick}`);
-    bootAfterLogin();
-
-  }catch(e){
-    toast("Błąd", e.message);
-  }
-});
-
-/* REGISTER */
-document.getElementById("btnRegister").addEventListener("click", async ()=>{
-  const nick = document.getElementById("regNick").value.trim();
-  const pass = document.getElementById("regPass").value.trim();
-  const code = document.getElementById("regTribeCode").value.trim();
-
-  if(!nick || !pass){
-    toast("Rejestracja", "Podaj nick i hasło.");
-    return;
-  }
-
-  if(code !== TRIBE_CODE){
-    toast("Rejestracja", "Zły kod plemienia.");
-    return;
-  }
-
-  try{
-    const user = await supaRegister(nick, pass);
-    toast("Rejestracja", `Konto utworzone: ${user.nick}`);
-  }catch(e){
-    toast("Błąd", e.message);
-  }
-});
-
-/* LOGOUT */
-document.getElementById("btnLogout").addEventListener("click", ()=>{
-  clearSession();
-  toast("Wylogowano", "Sesja usunięta.");
-  location.reload();
-});
-
-/* UPLOAD LABELS */
-document.getElementById("btnUploadLabels").addEventListener("click", async ()=>{
   const text = document.getElementById("labelsInput").value;
   const parsed = parseEnemyLabels(text);
 
@@ -1033,100 +672,212 @@ document.getElementById("btnUploadLabels").addEventListener("click", async ()=>{
     return;
   }
 
-  try{
-    await supaUploadLabels(parsed);
+  const rows = parsed.map(a => ({
+    owner_id: user.id,
+    defender: a.defender,
+    source: a.source,
+    player: a.player,
+    arrival: a.arrival,
+    raw: a.raw
+  }));
 
-    const byDef = groupBy(parsed, x=>x.defender);
-    let html = "";
+  const { error } = await supa
+    .from("attack_labels")
+    .insert(rows);
 
-    for(const def in byDef){
+  if(error){
+    toast("Błąd", "Nie udało się zapisać etykiet.");
+    console.error(error);
+    return;
+  }
+
+  const byDef = groupBy(parsed, a=>a.defender);
+  let html = "";
+
+  for(const def in byDef){
+    html += `
+      <div class="item">
+        <div class="inline">
+          <div>
+            <div class="mono"><b>${def}</b></div>
+            <div class="small">Nowych ataków: <b class="mono">${byDef[def].length}</b></div>
+          </div>
+          <span class="tag green">OK</span>
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById("labelsSummary").innerHTML = html;
+  toast("OK", `Dodano ataków: ${parsed.length}`);
+}
+
+/* ===================== ANALYSIS ===================== */
+async function runAnalysis(){
+  const user = currentUser();
+  if(!user){
+    toast("Brak dostępu", "Zaloguj się.");
+    switchTab("login");
+    return;
+  }
+
+  // all attacks in tribe db
+  const { data: allAttacks, error } = await supa
+    .from("attack_labels")
+    .select("*");
+
+  if(error){
+    toast("Błąd", "Nie można pobrać bazy plemienia.");
+    console.error(error);
+    return;
+  }
+
+  // only my defenders
+  const myAttacks = allAttacks.filter(a => a.owner_id === user.id);
+
+  if(myAttacks.length === 0){
+    document.getElementById("threatBoard").innerHTML =
+      `<div class="item small">Nie masz żadnych etykiet. Wklej dane w zakładce "Etykiety Ataków".</div>`;
+    return;
+  }
+
+  const repeatMap = {};
+  for(const a of allAttacks){
+    if(!a.source) continue;
+    repeatMap[a.source] = (repeatMap[a.source] || 0) + 1;
+  }
+
+  const byDef = groupBy(myAttacks, a=>a.defender);
+  const defenders = Object.keys(byDef);
+
+  let html = "";
+
+  for(const def of defenders){
+    const list = byDef[def];
+    const uniqueSources = [...new Set(list.map(x=>x.source).filter(Boolean))];
+
+    const maxRepeat = Math.max(1, ...uniqueSources.map(s => repeatMap[s] || 1));
+
+    html += `
+      <div class="item">
+        <div class="inline">
+          <div>
+            <div class="mono" style="font-weight:900;">${def}</div>
+            <div class="small">
+              Ataków: <b class="mono">${list.length}</b> • Źródeł: <b class="mono">${uniqueSources.length}</b>
+              • Max powtarzalność źródła: <b class="mono">${maxRepeat}</b>
+            </div>
+          </div>
+          <span class="tag yellow">INFO</span>
+        </div>
+
+        <div class="divider"></div>
+
+        ${list.map(a=>`
+          <div class="small" style="padding:6px 0;border-bottom:1px solid var(--border);">
+            <div class="mono">
+              <b class="clickSource">${a.source || "???"}</b> → <b>${a.defender}</b>
+            </div>
+            <div>
+              Gracz: <b class="clickPlayer">${escapeHtml(a.player || "UNKNOWN")}</b>
+              • Przybycie: <span class="mono">${a.arrival || "??"}</span>
+              • Powtarzalność: <b class="mono">${repeatMap[a.source] || 1}</b>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  document.getElementById("threatBoard").innerHTML = html;
+  toast("Analiza", "Przeliczono dane.");
+}
+
+/* ===================== SETTINGS ===================== */
+async function deleteMyLabels(){
+  const user = currentUser();
+  if(!user){
+    toast("Brak dostępu", "Zaloguj się.");
+    return;
+  }
+
+  if(!confirm("Usunąć wszystkie Twoje etykiety z bazy?")) return;
+
+  const { error } = await supa
+    .from("attack_labels")
+    .delete()
+    .eq("owner_id", user.id);
+
+  if(error){
+    toast("Błąd", "Nie udało się usunąć etykiet.");
+    console.error(error);
+    return;
+  }
+
+  toast("OK", "Usunięto Twoje etykiety.");
+}
+
+async function updateSettingsUI(){
+  const user = currentUser();
+  const tag = document.getElementById("adminTag");
+  const adminPanel = document.getElementById("adminPanel");
+
+  if(!user){
+    tag.className = "tag red";
+    tag.textContent = "USER";
+    adminPanel.innerHTML = `<div class="item small">Zaloguj się aby zobaczyć ustawienia.</div>`;
+    return;
+  }
+
+  if(user.is_admin){
+    tag.className = "tag green";
+    tag.textContent = "ADMIN";
+
+    const { data: users, error } = await supa.from("users").select("id,nick,is_admin,created_at");
+    if(error){
+      adminPanel.innerHTML = `<div class="item small">Błąd pobierania listy użytkowników.</div>`;
+      return;
+    }
+
+    let html = `<div class="item small"><b>Lista użytkowników:</b></div>`;
+    for(const u of users){
       html += `
         <div class="item">
           <div class="inline">
             <div>
-              <div class="mono"><b>${def}</b></div>
-              <div class="small">Dodano ataków: <b class="mono">${byDef[def].length}</b></div>
+              <div class="mono"><b>${escapeHtml(u.nick)}</b></div>
+              <div class="small">Admin: <b>${u.is_admin ? "TAK" : "NIE"}</b></div>
             </div>
-            <span class="tag green">OK</span>
+            <span class="tag ${u.is_admin ? "green" : "blue"}">${u.is_admin ? "ADMIN" : "USER"}</span>
           </div>
         </div>
       `;
     }
 
-    document.getElementById("labelsSummary").innerHTML = html;
-    toast("Etykiety", `Wysłano do bazy: ${parsed.length}`);
-
-  }catch(e){
-    toast("Błąd", e.message);
-  }
-});
-
-/* RUN ANALYSIS */
-document.getElementById("btnRunThreat").addEventListener("click", ()=>{
-  renderThreatBoard();
-});
-
-/* SETTINGS - DELETE MY LABELS */
-document.getElementById("btnDeleteMyLabels").addEventListener("click", async ()=>{
-  if(!confirm("Usunąć wszystkie Twoje etykiety z bazy?")) return;
-
-  try{
-    await supaDeleteMyLabels();
-    toast("Ustawienia", "Usunięto Twoje etykiety.");
-  }catch(e){
-    toast("Błąd", e.message);
-  }
-});
-
-/* ADMIN DELETE ALL */
-document.getElementById("btnDeleteAllLabels").addEventListener("click", async ()=>{
-  if(!isAdmin()){
-    toast("Admin", "Brak uprawnień.");
-    return;
-  }
-
-  if(!confirm("Usunąć WSZYSTKIE etykiety całego plemienia?")) return;
-
-  try{
-    await supaDeleteAllLabels();
-    toast("Admin", "Usunięto całą bazę etykiet.");
-  }catch(e){
-    toast("Błąd", e.message);
-  }
-});
-
-/* ADMIN REFRESH */
-document.getElementById("btnRefreshAdmin").addEventListener("click", ()=>{
-  renderAdminUsers();
-});
-
-/* ===================== INIT ===================== */
-function bootAfterLogin(){
-  showTabs();
-
-  const tag = document.getElementById("userTag");
-  tag.textContent = currentNick();
-  tag.className = isAdmin() ? "tag red" : "tag green";
-
-  document.getElementById("btnLogout").classList.remove("hidden");
-
-  // admin tab only if admin
-  if(!isAdmin()){
-    document.querySelector('.tab[data-tab="admin"]').classList.add("hidden");
+    adminPanel.innerHTML = html;
   }else{
-    document.querySelector('.tab[data-tab="admin"]').classList.remove("hidden");
+    tag.className = "tag blue";
+    tag.textContent = "USER";
+    adminPanel.innerHTML = `<div class="item small">Tylko admin ma dostęp.</div>`;
   }
-
-  switchTab("labels");
 }
 
-(function init(){
-  if(isLoggedIn()){
-    bootAfterLogin();
-  }else{
-    showLogin();
-  }
-})();
+/* ===================== EVENTS ===================== */
+document.getElementById("btnRegister").addEventListener("click", registerUser);
+document.getElementById("btnLogin").addEventListener("click", loginUser);
+document.getElementById("btnLogout").addEventListener("click", logoutUser);
+
+document.getElementById("btnUploadLabels").addEventListener("click", uploadLabels);
+document.getElementById("btnClearLabels").addEventListener("click", ()=>{
+  document.getElementById("labelsInput").value = "";
+  document.getElementById("labelsSummary").innerHTML = `<div class="item small">Brak danych.</div>`;
+});
+
+document.getElementById("btnRunAnalysis").addEventListener("click", runAnalysis);
+document.getElementById("btnDeleteMyLabels").addEventListener("click", deleteMyLabels);
+
+/* INIT */
+updateLoginUI();
 </script>
 
 </body>
