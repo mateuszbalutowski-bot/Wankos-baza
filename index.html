@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Tribal Intel Panel</title>
+  <title>Wankos Intel Panel (Supabase)</title>
 
   <style>
     :root{
@@ -59,7 +59,7 @@
       margin:0;
       font-size:16px;
       letter-spacing:0.2px;
-      font-weight:800;
+      font-weight:900;
     }
 
     .subtitle{
@@ -73,7 +73,6 @@
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      align-items:center;
     }
 
     .tab{
@@ -83,7 +82,7 @@
       border:1px solid var(--border);
       background: rgba(2,6,23,0.35);
       color: var(--muted);
-      font-weight:800;
+      font-weight:900;
       font-size:12px;
       user-select:none;
       transition:.15s;
@@ -127,7 +126,7 @@
       line-height:1.4;
     }
 
-    textarea, input, select{
+    textarea, input{
       width:100%;
       background: rgba(2,6,23,0.55);
       border:1px solid var(--border);
@@ -236,6 +235,7 @@
       transition:.12s;
     }
     .item:hover{ background: rgba(255,255,255,0.03); }
+
     .item:last-child{ border-bottom:none; }
 
     .inline{
@@ -252,27 +252,6 @@
       line-height:1.4;
     }
 
-    .table{
-      width:100%;
-      border-collapse: collapse;
-      margin-top:12px;
-      font-size:12px;
-    }
-    .table th, .table td{
-      border-bottom:1px solid var(--border);
-      padding:10px 8px;
-      text-align:left;
-      vertical-align:top;
-    }
-    .table th{
-      font-size:11px;
-      color:var(--muted);
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:0.08em;
-    }
-    .right{ text-align:right; }
-
     .collapse{
       margin-top:10px;
       padding:10px 12px;
@@ -280,13 +259,6 @@
       border:1px solid var(--border);
       background:rgba(2,6,23,0.35);
       display:none;
-    }
-
-    .legend{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:10px;
     }
 
     .toast{
@@ -310,15 +282,19 @@
       font-size:12px;
     }
 
-    .clickSource, .clickPlayer, .clickOwner{
+    .clickSource{
       cursor:pointer;
       color: rgba(96,165,250,0.95);
       text-decoration: underline;
-      font-weight:900;
     }
-    .clickSource:hover, .clickPlayer:hover, .clickOwner:hover{
-      filter: brightness(1.2);
+    .clickSource:hover{ filter: brightness(1.2); }
+
+    .clickPlayer{
+      cursor:pointer;
+      color: rgba(52,211,153,0.95);
+      text-decoration: underline;
     }
+    .clickPlayer:hover{ filter: brightness(1.2); }
 
     .hidden{ display:none !important; }
   </style>
@@ -328,19 +304,17 @@
 <header>
   <div class="wrap topbar">
     <div>
-      <h1>Tribal Intel Panel</h1>
+      <h1>Wankos Intel Panel</h1>
       <div class="subtitle">
-        Panel plemienny do notatek tokenów, analizy etykiet i rozpoznania wiosek OFF/DEFF.
-        <br>
-        <span id="userInfo" class="small"></span>
+        Supabase Tribe DB • tylko własne wioski w analizie • wspólna powtarzalność ataków
       </div>
     </div>
 
-    <div class="tabs" id="tabsBar">
-      <div class="tab active" data-tab="labels">Etykiety Ataków</div>
-      <div class="tab" data-tab="analysis">Analiza Etykiet</div>
-      <div class="tab" data-tab="enemydb">Baza Wiosek Wroga</div>
-      <div class="tab" data-tab="notes">Baza Notatek</div>
+    <div class="tabs hidden" id="mainTabs">
+      <div class="tab active" data-tab="labels">Etykiety</div>
+      <div class="tab" data-tab="analysis">Analiza</div>
+      <div class="tab" data-tab="enemydb">Baza Tokenów</div>
+      <div class="tab" data-tab="admin">Panel Admina</div>
       <div class="tab" data-tab="settings">Ustawienia</div>
     </div>
   </div>
@@ -349,57 +323,69 @@
 <main>
   <div class="wrap">
 
-    <!-- TAB: LOGIN -->
-    <div class="tabPanel" id="tab-login" style="display:none;">
+    <!-- LOGIN -->
+    <div class="tabPanel" id="tab-login">
       <div class="card">
-        <h2>🔐 Logowanie / Rejestracja <span class="tag blue">Konta</span></h2>
+        <h2>
+          🔐 Logowanie / Rejestracja
+          <span class="tag blue">Wankos2026</span>
+        </h2>
 
         <div class="hint">
+          Załóż konto lub zaloguj się. Nick = nick w grze.<br>
           Rejestracja wymaga kodu plemienia.
-          <br>Po rejestracji konto działa lokalnie (LocalStorage).
         </div>
 
         <div class="divider"></div>
 
-        <h2>📌 Logowanie</h2>
         <div class="row">
-          <input id="loginNick" placeholder="Nick w grze..." class="mono"/>
-          <input id="loginPass" type="password" placeholder="Hasło..."/>
+          <input id="loginNick" placeholder="Nick w grze (np. Jupiter)" />
+          <input id="loginPass" type="password" placeholder="Hasło" />
         </div>
+
         <div class="row">
-          <button id="btnLogin" class="btn2">Zaloguj</button>
+          <button id="btnLogin">Zaloguj</button>
+          <button id="btnLogout" class="btnDanger hidden">Wyloguj</button>
         </div>
 
         <div class="divider"></div>
 
-        <h2>➕ Rejestracja</h2>
+        <h2>🆕 Rejestracja</h2>
         <div class="row">
-          <input id="regNick" placeholder="Nick w grze..." class="mono"/>
-          <input id="regPass" type="password" placeholder="Hasło..."/>
-          <input id="regCode" placeholder="Kod plemienia..." class="mono"/>
+          <input id="regNick" placeholder="Nick w grze" />
+          <input id="regPass" type="password" placeholder="Hasło" />
+          <input id="regTribeCode" placeholder="Kod plemienia (Wankos2026)" />
         </div>
+
         <div class="row">
-          <button id="btnRegister">Zarejestruj konto</button>
+          <button id="btnRegister" class="btn2">Załóż konto</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="hint">
+          Po zalogowaniu etykiety ataków zapisują się do bazy plemienia.
         </div>
       </div>
     </div>
 
-    <!-- TAB: LABELS -->
-    <div class="tabPanel" id="tab-labels">
+    <!-- LABELS -->
+    <div class="tabPanel hidden" id="tab-labels">
       <div class="card">
         <h2>
-          🏷️ Etykiety Ataków (wklej dane z gry)
-          <span class="tag blue">GLOBAL DB</span>
+          🏷️ Etykiety Ataków
+          <span class="tag green" id="userTag">USER</span>
         </h2>
 
         <div class="hint">
-          Wklej etykiety. System zapisze je do globalnej bazy plemienia i automatycznie przypisze Twoje wioski (defender).
+          Wklej etykiety z gry. System automatycznie zapisze je do bazy plemienia.
+          Wioski obrońcy (defender) zostaną przypisane do Twojego konta.
         </div>
 
-        <textarea id="labelsInput" placeholder="Wklej etykiety ataków tutaj..."></textarea>
+        <textarea id="labelsInput" placeholder="Wklej etykiety tutaj..."></textarea>
 
         <div class="row">
-          <button id="btnParseLabels" class="btn2">📥 Wczytaj etykiety</button>
+          <button id="btnUploadLabels" class="btn2">📥 Wyślij do bazy plemienia</button>
           <button id="btnClearLabels" class="btnGhost">🧹 Wyczyść</button>
         </div>
 
@@ -412,50 +398,43 @@
       </div>
     </div>
 
-    <!-- TAB: ANALYSIS -->
-    <div class="tabPanel" id="tab-analysis" style="display:none;">
+    <!-- ANALYSIS -->
+    <div class="tabPanel hidden" id="tab-analysis">
       <div class="card">
         <h2>
-          📊 Analiza Etykiet (Twoje wioski)
+          📊 Analiza (tylko Twoje wioski)
           <span class="tag yellow">Threat Engine</span>
         </h2>
 
         <div class="hint">
-          Widzisz tylko swoje cele (defender), ale statystyki powtarzalności i fejkmatów są liczone globalnie.
+          Ranking zagrożonych wiosek, ale tylko defender = Twoje konto.<br>
+          Powtarzalność źródeł jest liczona z całej bazy plemienia.
         </div>
 
         <div class="row">
-          <button id="btnRunThreat" class="btn2">⚡ Przelicz zagrożenia</button>
-          <button id="btnClearThreat" class="btnGhost">🧹 Wyczyść analizę</button>
+          <button id="btnRunThreat" class="btn2">⚡ Przelicz analizę</button>
         </div>
 
         <div id="threatBoard" class="listBox">
-          <div class="item small">Brak analizy. Wklej etykiety w zakładce "Etykiety Ataków".</div>
+          <div class="item small">Brak analizy.</div>
         </div>
       </div>
     </div>
 
-    <!-- TAB: ENEMY DB -->
-    <div class="tabPanel" id="tab-enemydb" style="display:none;">
+    <!-- ENEMY TOKENS -->
+    <div class="tabPanel hidden" id="tab-enemydb">
       <div class="card">
         <h2>
-          🏰 Baza Wiosek Wroga
-          <span class="tag green">Intel DB</span>
+          🏰 Baza Tokenów (plemienna)
+          <span class="tag blue">Supabase</span>
         </h2>
 
         <div class="hint">
-          Lista wiosek z tokenów. Kliknij aby zobaczyć profil.
-        </div>
-
-        <div class="legend">
-          <span class="tag red">OFF - możliwy FULL</span>
-          <span class="tag yellow">OFF/MIX - podejrzana</span>
-          <span class="tag green">DEFF / FEJK</span>
-          <span class="tag blue">UNKNOWN</span>
+          To jest wspólna baza tokenów plemienia.
         </div>
 
         <div class="row">
-          <input id="enemySearch" placeholder="Szukaj (np. 626|471)" class="mono"/>
+          <input id="enemySearch" placeholder="Szukaj coords (np. 626|471)" class="mono"/>
           <button id="btnEnemySearch">Szukaj</button>
         </div>
 
@@ -470,102 +449,50 @@
       </div>
     </div>
 
-    <!-- TAB: NOTES -->
-    <div class="tabPanel" id="tab-notes" style="display:none;">
+    <!-- ADMIN -->
+    <div class="tabPanel hidden" id="tab-admin">
       <div class="card">
         <h2>
-          🗒️ Tokeny z notatek
-          <span id="adminTag" class="tag red">BRAK UPRAWNIEŃ</span>
+          👑 Panel Admina
+          <span class="tag red">ADMIN ONLY</span>
         </h2>
 
         <div class="hint">
-          Dodawanie tokenów do bazy jest dostępne tylko dla admina.
-        </div>
-
-        <textarea id="notesInput" placeholder="Wklej tokeny HN1/HN2..."></textarea>
-
-        <div class="row">
-          <button id="btnParseTokens">🔍 Wczytaj tokeny</button>
-          <button id="btnAddTokens" class="btn2">➕ Dodaj tokeny do bazy</button>
-          <button id="btnClearNotes" class="btnGhost">🧹 Wyczyść</button>
+          Tu admin widzi użytkowników i może nadawać admina innym.
         </div>
 
         <div class="divider"></div>
 
-        <h2>📌 Statystyki</h2>
-        <div id="tokenStats" class="listBox">
+        <h2>👥 Użytkownicy</h2>
+        <div id="adminUsersList" class="listBox">
           <div class="item small">Brak danych.</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button id="btnRefreshAdmin" class="btn2">🔄 Odśwież listę</button>
+          <button id="btnDeleteAllLabels" class="btnDanger">🗑️ Usuń WSZYSTKIE etykiety</button>
         </div>
       </div>
     </div>
 
-    <!-- TAB: SETTINGS -->
-    <div class="tabPanel" id="tab-settings" style="display:none;">
+    <!-- SETTINGS -->
+    <div class="tabPanel hidden" id="tab-settings">
       <div class="card">
         <h2>
           ⚙️ Ustawienia
-          <span class="tag blue">Panel</span>
+          <span class="tag blue">Konto</span>
         </h2>
 
         <div class="hint">
-          Użytkownik może usuwać tylko swoje etykiety.
-          Admin ma dostęp do pełnych narzędzi.
+          Możesz usunąć tylko swoje etykiety.
         </div>
 
         <div class="divider"></div>
 
-        <h2>👤 Konto</h2>
         <div class="row">
-          <button id="btnLogout" class="btnDanger">Wyloguj</button>
-          <button id="btnDeleteMyLabels" class="btnDanger">Usuń moje etykiety</button>
-        </div>
-
-        <div id="adminPanel" class="hidden">
-          <div class="divider"></div>
-
-          <h2>👑 Panel Admina</h2>
-          <div class="hint">
-            Możesz nadawać admina innym graczom oraz sprawdzać kto dodawał etykiety.
-          </div>
-
-          <div class="divider"></div>
-
-          <h2>🧠 Zarządzanie adminami</h2>
-          <div class="row">
-            <input id="adminNickInput" placeholder="Nick gracza..." class="mono"/>
-            <button id="btnGrantAdmin" class="btn2">Nadaj admina</button>
-            <button id="btnRevokeAdmin" class="btnDanger">Usuń admina</button>
-          </div>
-
-          <div class="divider"></div>
-
-          <h2>📌 Statystyki plemienia</h2>
-          <div id="adminStats" class="listBox">
-            <div class="item small">Brak danych.</div>
-          </div>
-
-          <div class="divider"></div>
-
-          <h2>🔍 Profil użytkownika</h2>
-          <div id="adminUserProfile" class="listBox">
-            <div class="item small">Kliknij użytkownika powyżej.</div>
-          </div>
-
-          <div class="divider"></div>
-
-          <h2>💾 Import / Export danych</h2>
-          <div class="row">
-            <button id="btnExport" class="btnGhost">Export JSON</button>
-            <button id="btnImport" class="btnGhost">Import JSON</button>
-          </div>
-
-          <div class="divider"></div>
-
-          <h2>🗑️ Reset bazy</h2>
-          <div class="row">
-            <button id="btnResetAll" class="btnDanger">Usuń całą bazę</button>
-            <button id="btnResetLabels" class="btnDanger">Usuń globalne etykiety</button>
-          </div>
+          <button id="btnDeleteMyLabels" class="btnDanger">🗑️ Usuń moje etykiety</button>
         </div>
       </div>
     </div>
@@ -575,60 +502,24 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-/* ========= LZString minimal ========= */
-var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length;n++)t[o][o.charAt(n)]=n}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",t={},i={compressToBase64:function(o){if(null==o)return"";var r=i._compress(o,6,function(o){return n.charAt(o)});switch(r.length%4){default:case 0:return r;case 1:return r+"===";case 2:return r+"==";case 3:return r+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(e){return o(n,r.charAt(e))})},_compress:function(o,r,n){if(null==o)return"";var e,t,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else{if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u)}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==r-1){d.push(n(m));break}v++}return d.join("")},_decompress:function(o,n,e){var t,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:e(0),position:n,index:1};for(i=0;3>i;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(t=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=String.fromCharCode(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=String.fromCharCode(p);break;case 2:return""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return"";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=String.fromCharCode(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=String.fromCharCode(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else{if(l!==d)return null;v=s+s.charAt(0)}w.push(v),f[d++]=s+v.charAt(0),h--,s=v,0==h&&(h=Math.pow(2,m),m++)}}
-};return i}();
+/* ===================== SUPABASE CONFIG ===================== */
+const SUPABASE_URL = "https://cixrktawkfxaexhzhnho.supabase.co";
+const SUPABASE_KEY = "sb_publishable_kUYmC66z6c9g3qrj0hx2Zg_ZV__s0zA";
 
-/* ===================== CONFIG ===================== */
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 const TRIBE_CODE = "Wankos2026";
-const DEFAULT_ADMIN = "Jupiter";
-
-const UNIT_ORDER = ["spear","sword","axe","spy","light","heavy","ram","catapult","knight","snob"];
-const UNIT_LABELS = { spear:"Pik", sword:"Miecz", axe:"Topór", spy:"Zwiad", light:"LK", heavy:"CK", ram:"Taran", catapult:"Kat", knight:"Rycerz", snob:"Szlach" };
-
-const DB_KEY = "tribal_intel_enemy_db_v4";
-const GLOBAL_LABELS_KEY = "tribal_intel_global_labels_v4";
-const USERS_KEY = "tribal_intel_users_v4";
-const SESSION_KEY = "tribal_intel_session_v4";
-const ADMINS_KEY = "tribal_intel_admins_v4";
-const MY_VILLAGES_KEY_PREFIX = "tribal_intel_my_villages_v4_";
-
-const WORLD_SPEED = 2.0;
-
-const CORE_BUILD_TIME = {
-  axe: 205.04,
-  light: 374.2,
-  ram: 1335.3,
-  catapult: 2002.9
-};
-
-const BUILD_TIME = {
-  axe: CORE_BUILD_TIME.axe / WORLD_SPEED,
-  light: CORE_BUILD_TIME.light / WORLD_SPEED,
-  ram: CORE_BUILD_TIME.ram / WORLD_SPEED,
-  catapult: CORE_BUILD_TIME.catapult / WORLD_SPEED
-};
-
-const FULL_OFF = {
-  axe: 6000,
-  light: 2800,
-  ram: 400
-};
-
-const FULL_THRESHOLDS = {
-  full: 0.80,
-  medium: 0.40
-};
+const SESSION_KEY = "wankos_session_user";
 
 /* ===================== UTIL ===================== */
-function nowISO(){ return new Date().toISOString(); }
-
 function toast(title, msg){
   const t = document.getElementById("toast");
   t.innerHTML = `<strong>${escapeHtml(title)}</strong>${escapeHtml(msg)}`;
   t.style.display = "block";
-  setTimeout(()=>{ t.style.display="none"; }, 2600);
+  setTimeout(()=>{ t.style.display="none"; }, 2500);
 }
 
 function escapeHtml(s){
@@ -647,227 +538,67 @@ function groupBy(arr, keyFn){
   return m;
 }
 
-function hoursBetween(fromTimestamp, toTimestamp){
-  if(!fromTimestamp || !toTimestamp) return 0;
-  return Math.max(0, (toTimestamp - fromTimestamp) / (1000*60*60));
-}
+function nowISO(){ return new Date().toISOString(); }
 
-function prettyHours(hours){
-  hours = Math.floor(hours || 0);
-  if(hours < 1) return "0h";
-  if(hours < 24) return `${hours}h`;
-  const d = Math.floor(hours / 24);
-  const h = hours % 24;
-  return `${d}d ${h}h`;
-}
-
-function normalizeNick(nick){
-  return String(nick || "").trim();
-}
-
-/* ===================== AUTH STORAGE ===================== */
-function loadUsers(){
-  try{
-    const raw = localStorage.getItem(USERS_KEY);
-    if(!raw) return {};
-    return JSON.parse(raw);
-  }catch(e){ return {}; }
-}
-function saveUsers(users){
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function loadSession(){
+/* ===================== AUTH (LOCAL SESSION) ===================== */
+function getSession(){
   try{
     const raw = localStorage.getItem(SESSION_KEY);
     if(!raw) return null;
     return JSON.parse(raw);
   }catch(e){ return null; }
 }
-function saveSession(session){
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+
+function setSession(user){
+  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 }
+
 function clearSession(){
   localStorage.removeItem(SESSION_KEY);
 }
 
-function loadAdmins(){
-  try{
-    const raw = localStorage.getItem(ADMINS_KEY);
-    if(!raw){
-      return [DEFAULT_ADMIN];
-    }
-    const list = JSON.parse(raw);
-    if(!Array.isArray(list)) return [DEFAULT_ADMIN];
-    if(!list.includes(DEFAULT_ADMIN)) list.push(DEFAULT_ADMIN);
-    return list;
-  }catch(e){
-    return [DEFAULT_ADMIN];
-  }
-}
-function saveAdmins(list){
-  localStorage.setItem(ADMINS_KEY, JSON.stringify(list));
-}
-
-function getCurrentUser(){
-  const sess = loadSession();
-  if(!sess || !sess.nick) return null;
-  return { nick: sess.nick };
-}
-
 function isLoggedIn(){
-  return !!getCurrentUser();
+  return !!getSession();
+}
+
+function currentNick(){
+  const s = getSession();
+  return s ? s.nick : null;
 }
 
 function isAdmin(){
-  const user = getCurrentUser();
-  if(!user) return false;
-  const admins = loadAdmins();
-  return admins.includes(user.nick);
+  const s = getSession();
+  return s ? s.is_admin === true : false;
 }
 
-function myVillagesKey(){
-  const u = getCurrentUser();
-  if(!u) return null;
-  return MY_VILLAGES_KEY_PREFIX + u.nick;
+/* ===================== UI ===================== */
+function showTabs(){
+  document.getElementById("mainTabs").classList.remove("hidden");
+  document.getElementById("tab-login").classList.add("hidden");
 }
 
-function loadMyVillages(){
-  try{
-    const key = myVillagesKey();
-    if(!key) return [];
-    const raw = localStorage.getItem(key);
-    if(!raw) return [];
-    const list = JSON.parse(raw);
-    if(!Array.isArray(list)) return [];
-    return list;
-  }catch(e){ return []; }
-}
-function saveMyVillages(list){
-  const key = myVillagesKey();
-  if(!key) return;
-  localStorage.setItem(key, JSON.stringify(list));
+function showLogin(){
+  document.getElementById("mainTabs").classList.add("hidden");
+  document.getElementById("tab-login").classList.remove("hidden");
+
+  document.querySelectorAll(".tabPanel").forEach(p=>{
+    if(p.id !== "tab-login") p.classList.add("hidden");
+  });
 }
 
-/* ===================== STORAGE DB ===================== */
-function loadDB(){
-  try{
-    const raw = localStorage.getItem(DB_KEY);
-    if(!raw) return {};
-    return JSON.parse(raw);
-  }catch(e){ return {}; }
-}
-function saveDB(db){
-  localStorage.setItem(DB_KEY, JSON.stringify(db));
-}
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".tabPanel").forEach(p=>p.classList.add("hidden"));
 
-function loadGlobalLabels(){
-  try{
-    const raw = localStorage.getItem(GLOBAL_LABELS_KEY);
-    if(!raw) return [];
-    return JSON.parse(raw);
-  }catch(e){ return []; }
-}
-function saveGlobalLabels(list){
-  localStorage.setItem(GLOBAL_LABELS_KEY, JSON.stringify(list));
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add("active");
+  document.getElementById("tab-"+name).classList.remove("hidden");
+
+  if(name === "analysis") renderThreatBoard();
+  if(name === "enemydb") renderEnemyDB();
+  if(name === "admin") renderAdminUsers();
 }
 
-/* ===================== TOKEN ===================== */
-function decodeHN(token){
-  token = token.trim();
-
-  let version = null;
-  let packed = null;
-
-  if(token.startsWith("HN1:")){
-    version = "HN1";
-    packed = token.slice(4);
-  }
-  else if(token.startsWith("HN2:")){
-    version = "HN2";
-    packed = token.slice(4);
-  }
-  else{
-    throw new Error("Token nie jest HN1 ani HN2");
-  }
-
-  const json = LZString.decompressFromBase64(packed);
-  if(!json) throw new Error("Nie można zdekompresować tokenu");
-
-  const obj = JSON.parse(json);
-  obj._version = version;
-  return obj;
-}
-
-function troopsArrayToObj(u){
-  const o = {};
-  for(let i=0;i<UNIT_ORDER.length;i++){
-    o[UNIT_ORDER[i]] = Number(u[i] || 0);
-  }
-  return o;
-}
-
-function estimateOffPower(t){
-  return (t.axe||0) + (t.light||0)*4 + (t.ram||0)*5 + (t.snob||0)*100;
-}
-function estimateDefPower(t){
-  return (t.spear||0) + (t.sword||0)*1 + (t.heavy||0)*6;
-}
-
-function classifyVillage(t){
-  const off = estimateOffPower(t);
-  const def = estimateDefPower(t);
-  if(off < 250 && def < 250) return "UNKNOWN";
-  if(off > def*1.5 && off > 2500) return "OFF";
-  if(def > off*1.5 && def > 2500) return "DEFF";
-  return "MIX";
-}
-
-function villageColor(type, troops){
-  const off = estimateOffPower(troops);
-  if(type === "OFF" && off > 20000) return "red";
-  if(type === "OFF" && off > 8000) return "yellow";
-  if(type === "DEFF") return "green";
-  if(type === "MIX") return "yellow";
-  return "blue";
-}
-
-/* ===================== OFF REBUILD PREDICTION ===================== */
-function predictRebuildMax(troopsAfter, hoursPassed){
-  const predicted = JSON.parse(JSON.stringify(troopsAfter || {}));
-
-  predicted.axe = (predicted.axe || 0) + Math.floor((hoursPassed * 3600) / BUILD_TIME.axe);
-  predicted.light = (predicted.light || 0) + Math.floor((hoursPassed * 3600) / BUILD_TIME.light);
-  predicted.ram = (predicted.ram || 0) + Math.floor((hoursPassed * 3600) / BUILD_TIME.ram);
-
-  return predicted;
-}
-
-function calcFullOffPercent(troops){
-  const axePct = (troops.axe || 0) / FULL_OFF.axe;
-  const lightPct = (troops.light || 0) / FULL_OFF.light;
-  const ramPct = (troops.ram || 0) / FULL_OFF.ram;
-  return Math.max(0, Math.min(1, Math.min(axePct, lightPct, ramPct)));
-}
-
-function classifyOffThreatByPercent(percent){
-  if(percent >= FULL_THRESHOLDS.full) return "FULL";
-  if(percent >= FULL_THRESHOLDS.medium) return "MEDIUM";
-  return "FAKE";
-}
-
-function threatColor(threat){
-  if(threat === "FULL") return "red";
-  if(threat === "MEDIUM") return "yellow";
-  return "green";
-}
-
-/* ===================== PARSERS ===================== */
-function extractTokens(text){
-  const re = /HN[12]:[A-Za-z0-9+\/=\-$]+/g;
-  return text.match(re) || [];
-}
-
+/* ===================== PARSER ETYKIET ===================== */
 function parseEnemyLabels(text){
   const lines = text.split("\n").map(x=>x.trim()).filter(Boolean);
   const attacks = [];
@@ -875,6 +606,7 @@ function parseEnemyLabels(text){
   let currentDefender = null;
 
   for(const line of lines){
+
     const villageMatch = line.match(/\[b\]Wioska:\[\/b\]\s*\[coord\](\d{1,3}\|\d{1,3})\[\/coord\]/);
     if(villageMatch){
       currentDefender = villageMatch[1];
@@ -883,8 +615,8 @@ function parseEnemyLabels(text){
 
     if(!line.includes("[command]attack[/command]")) continue;
 
-    const sourceMatch = line.match(/\[coord\](\d{1,3}\|\d{1,3})\[\/coord\]/);
-    const source = sourceMatch ? sourceMatch[1] : null;
+    const coordsMatches = [...line.matchAll(/\[coord\](\d{1,3}\|\d{1,3})\[\/coord\]/g)].map(m=>m[1]);
+    const source = coordsMatches.length > 0 ? coordsMatches[0] : null;
 
     const playerMatch = line.match(/\[player\](.*?)\[\/player\]/);
     const player = playerMatch ? playerMatch[1] : "UNKNOWN";
@@ -897,12 +629,109 @@ function parseEnemyLabels(text){
       source,
       player,
       arrival,
-      raw: line,
-      createdAt: nowISO()
+      raw: line
     });
   }
 
   return attacks;
+}
+
+/* ===================== SUPABASE DB OPS ===================== */
+async function supaLogin(nick, pass){
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("nick", nick)
+    .eq("password", pass)
+    .limit(1);
+
+  if(error) throw error;
+  if(!data || data.length === 0) return null;
+  return data[0];
+}
+
+async function supaRegister(nick, pass){
+  const { data, error } = await supabase
+    .from("users")
+    .insert([{ nick, password: pass, is_admin: false }])
+    .select()
+    .limit(1);
+
+  if(error) throw error;
+  return data[0];
+}
+
+async function supaUploadLabels(labels){
+  const nick = currentNick();
+  const rows = labels.map(a=>({
+    owner_nick: nick,
+    defender: a.defender,
+    source: a.source,
+    player: a.player,
+    arrival: a.arrival,
+    raw: a.raw
+  }));
+
+  const { error } = await supabase.from("attack_labels").insert(rows);
+  if(error) throw error;
+}
+
+async function supaGetMyLabels(){
+  const nick = currentNick();
+  const { data, error } = await supabase
+    .from("attack_labels")
+    .select("*")
+    .eq("owner_nick", nick);
+
+  if(error) throw error;
+  return data || [];
+}
+
+async function supaGetAllLabels(){
+  const { data, error } = await supabase
+    .from("attack_labels")
+    .select("*");
+
+  if(error) throw error;
+  return data || [];
+}
+
+async function supaDeleteMyLabels(){
+  const nick = currentNick();
+  const { error } = await supabase
+    .from("attack_labels")
+    .delete()
+    .eq("owner_nick", nick);
+
+  if(error) throw error;
+}
+
+async function supaDeleteAllLabels(){
+  const { error } = await supabase
+    .from("attack_labels")
+    .delete()
+    .neq("owner_nick", "___never___");
+
+  if(error) throw error;
+}
+
+async function supaGetUsers(){
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .order("created_at", { ascending: true });
+
+  if(error) throw error;
+  return data || [];
+}
+
+async function supaSetAdmin(nick, val){
+  const { error } = await supabase
+    .from("users")
+    .update({ is_admin: val })
+    .eq("nick", nick);
+
+  if(error) throw error;
 }
 
 /* ===================== ANALYSIS ===================== */
@@ -915,615 +744,215 @@ function computeSourceRepeatability(allAttacks){
   return map;
 }
 
-function detectFakeMachine(attacks){
-  const bySource = groupBy(attacks.filter(a=>a.source && a.arrival), a=>a.source);
-  const flagged = [];
-
-  for(const src in bySource){
-    const list = bySource[src].slice();
-
-    const times = list.map(a=>{
-      const parts = a.arrival.split(" ");
-      const d = parts[0].split(".").map(Number);
-      const t = parts[1].split(":").map(Number);
-      const date = new Date(2000+d[2], d[1]-1, d[0], t[0], t[1], t[2]);
-      return date.getTime();
-    }).sort((a,b)=>a-b);
-
-    let maxInWindow = 1;
-    for(let i=0;i<times.length;i++){
-      let j=i;
-      while(j<times.length && times[j]-times[i] <= 60*1000) j++;
-      maxInWindow = Math.max(maxInWindow, j-i);
-    }
-
-    if(maxInWindow >= 5){
-      flagged.push({ source: src, burst: maxInWindow });
-    }
-  }
-
-  return flagged;
-}
-
-function computeThreatForDefender(attacksForDefender, db, allAttacks){
-  const sources = attacksForDefender.map(a=>a.source).filter(Boolean);
-  const uniqueSources = [...new Set(sources)];
-
-  let score = 0;
-  score += Math.min(50, attacksForDefender.length * 6);
-  score += Math.min(40, uniqueSources.length * 5);
-
-  let offSources = 0;
-  let deffSources = 0;
-  let unknownSources = 0;
-  let strongestOff = 0;
-
-  for(const s of uniqueSources){
-    const entry = db[s];
-    if(!entry){
-      unknownSources++;
-      continue;
-    }
-
-    if(entry.type === "OFF") offSources++;
-    else if(entry.type === "DEFF") deffSources++;
-    else unknownSources++;
-
-    const off = estimateOffPower(entry.troops);
-    if(off > strongestOff) strongestOff = off;
-  }
-
-  score += offSources * 12;
-  score -= deffSources * 8;
-  score += unknownSources * 4;
-
-  if(strongestOff > 8000) score += 10;
-  if(strongestOff > 20000) score += 20;
-
-  const repeatMap = computeSourceRepeatability(allAttacks);
-  const maxRepeat = Math.max(0, ...uniqueSources.map(s => repeatMap[s] || 0));
-  if(maxRepeat >= 6) score += 15;
-  if(maxRepeat >= 12) score += 20;
-
-  score = Math.max(0, Math.min(100, score));
-
-  let verdict = "LOW";
-  if(score >= 80) verdict = "CRITICAL";
-  else if(score >= 55) verdict = "HIGH";
-  else if(score >= 30) verdict = "MEDIUM";
-
-  return { score, verdict, offSources, deffSources, unknownSources, strongestOff, maxRepeat };
-}
-
-/* ===================== RENDER ===================== */
-function renderTokenStats(foundTokensCount = null){
-  const db = loadDB();
-  const villagesCount = Object.keys(db).length;
-
-  let html = `<div class="item small">
-    Zapisanych wiosek w bazie: <b class="mono">${villagesCount}</b>
-  </div>`;
-
-  if(foundTokensCount !== null){
-    html = `<div class="item small">
-      Wykryto tokenów w notatkach: <b class="mono">${foundTokensCount}</b>
-    </div>` + html;
-  }
-
-  document.getElementById("tokenStats").innerHTML = html;
-}
-
-function renderEnemyDB(){
-  const db = loadDB();
-  const keys = Object.keys(db);
-
-  const box = document.getElementById("enemyList");
-  if(keys.length === 0){
-    box.innerHTML = `<div class="item small">Brak danych w bazie. Dodaj tokeny w zakładce "Baza Notatek".</div>`;
-    return;
-  }
-
-  keys.sort((a,b)=> new Date(db[b].updatedAt).getTime() - new Date(db[a].updatedAt).getTime());
-
-  let html = "";
-  for(const coords of keys.slice(0,200)){
-    const entry = db[coords];
-    const baseTroops = entry.troopsAfter || entry.troops || {};
-    const hours = entry.reportTime ? hoursBetween(entry.reportTime, Date.now()) : 0;
-    const predicted = predictRebuildMax(baseTroops, hours);
-
-    const color = villageColor(entry.type, predicted);
-
-    let label = "";
-
-    if(entry.type === "OFF"){
-      const pct = calcFullOffPercent(predicted);
-      const threat = classifyOffThreatByPercent(pct);
-
-      if(entry.offKilledAt){
-        const offHours = hoursBetween(entry.offKilledAt, Date.now());
-        label = `OFF padł ${prettyHours(offHours)} temu • ${Math.round(pct*100)}% FULL • ${threat}`;
-      }else{
-        label = `OFF • ${Math.round(pct*100)}% FULL • ${threat}`;
-      }
-    }
-    else if(entry.type === "DEFF"){
-      label = "DEFF - możliwy FEJK";
-    }
-    else if(entry.type === "MIX"){
-      label = "MIX - podejrzana";
-    }
-    else{
-      label = "UNKNOWN";
-    }
-
-    html += `
-      <div class="item" data-coords="${coords}">
-        <div class="inline">
-          <div>
-            <div class="mono"><b>${coords}</b></div>
-            <div class="small">${escapeHtml(label)}</div>
-          </div>
-          <span class="tag ${color}">${entry.type}</span>
-        </div>
-      </div>
-    `;
-  }
-
-  box.innerHTML = html;
-
-  for(const el of box.querySelectorAll("[data-coords]")){
-    el.addEventListener("click", ()=>{
-      renderEnemyProfile(el.getAttribute("data-coords"));
-    });
-  }
-}
-
-function renderEnemyProfile(coords){
-  const db = loadDB();
-  const entry = db[coords];
-  const box = document.getElementById("enemyProfile");
-
-  if(!entry){
-    box.innerHTML = `<div class="item small">Brak danych o wiosce ${coords}.</div>`;
-    return;
-  }
-
-  const baseTroops = entry.troopsAfter || entry.troops || {};
-  const hours = entry.reportTime ? hoursBetween(entry.reportTime, Date.now()) : 0;
-  const predicted = predictRebuildMax(baseTroops, hours);
-
-  let table = `<table class="table"><thead><tr><th>Jednostka</th><th class="right">Ilość (prognoza)</th></tr></thead><tbody>`;
-  for(const u of UNIT_ORDER){
-    table += `<tr><td>${UNIT_LABELS[u]}</td><td class="right mono">${predicted[u]||0}</td></tr>`;
-  }
-  table += `</tbody></table>`;
-
-  const off = estimateOffPower(predicted);
-  const def = estimateDefPower(predicted);
-
-  let offKilledInfo = "";
-  if(entry.offKilledAt){
-    const offHours = hoursBetween(entry.offKilledAt, Date.now());
-    offKilledInfo = `<div class="small">🔥 OFF padł: <b class="mono">${prettyHours(offHours)} temu</b></div>`;
-  }
-
-  let reportInfo = "";
-  if(entry.reportTime){
-    reportInfo = `<div class="small">Raport: <b class="mono">${prettyHours(hours)} temu</b></div>`;
-  }
-
-  let percentInfo = "";
-  if(entry.type === "OFF"){
-    const pct = calcFullOffPercent(predicted);
-    const threat = classifyOffThreatByPercent(pct);
-    percentInfo = `<div class="small">OFF prognoza: <b class="mono">${Math.round(pct*100)}%</b> FULL • <span class="tag ${threatColor(threat)}">${threat}</span></div>`;
-  }
-
-  box.innerHTML = `
-    <div class="item">
-      <div class="inline">
-        <div class="mono" style="font-weight:900;font-size:14px;">${coords}</div>
-        <span class="tag ${villageColor(entry.type, predicted)}">${entry.type}</span>
-      </div>
-
-      <div class="small">Aktualizacja: <span class="mono">${new Date(entry.updatedAt).toLocaleString()}</span></div>
-      ${reportInfo}
-      ${offKilledInfo}
-
-      ${isAdmin() ? `
-      <div class="row" style="margin-top:12px;">
-        <button class="btnDanger" id="btnDeleteVillage">🗑️ Usuń wioskę z bazy</button>
-      </div>` : ``}
-
-      <div class="divider"></div>
-
-      <div class="small">OFF power: <span class="mono">${Math.round(off)}</span> • DEF power: <span class="mono">${Math.round(def)}</span></div>
-      ${percentInfo}
-
-      ${table}
-    </div>
-  `;
-
-  if(isAdmin()){
-    document.getElementById("btnDeleteVillage").addEventListener("click", ()=>{
-      if(!confirm("Na pewno usunąć tę wioskę z bazy?")) return;
-
-      const db = loadDB();
-      delete db[coords];
-      saveDB(db);
-
-      toast("Baza", `Usunięto wioskę ${coords}.`);
-      renderEnemyDB();
-
-      box.innerHTML = `<div class="item small">Wioska ${coords} została usunięta z bazy.</div>`;
-    });
-  }
-}
-
-function renderThreatBoard(){
-  const db = loadDB();
-  const allAttacks = loadGlobalLabels();
-  const myVillages = loadMyVillages();
-
+async function renderThreatBoard(){
   const board = document.getElementById("threatBoard");
-  if(allAttacks.length === 0){
-    board.innerHTML = `<div class="item small">Brak etykiet. Wklej dane w zakładce "Etykiety Ataków".</div>`;
-    return;
-  }
+  board.innerHTML = `<div class="item small">⏳ Pobieranie danych z Supabase...</div>`;
 
-  if(myVillages.length === 0){
-    board.innerHTML = `<div class="item small">Nie masz przypisanych wiosek defender. Wklej swoje etykiety w zakładce "Etykiety Ataków".</div>`;
-    return;
-  }
+  try{
+    const myLabels = await supaGetMyLabels();
+    const allLabels = await supaGetAllLabels();
 
-  // tylko moje cele
-  const myAttacks = allAttacks.filter(a => myVillages.includes(a.defender));
+    if(myLabels.length === 0){
+      board.innerHTML = `<div class="item small">Brak Twoich etykiet w bazie.</div>`;
+      return;
+    }
 
-  if(myAttacks.length === 0){
-    board.innerHTML = `<div class="item small">Brak ataków na Twoje wioski.</div>`;
-    return;
-  }
+    const repeatMap = computeSourceRepeatability(allLabels);
 
-  const byDef = groupBy(myAttacks.filter(a=>a.defender), a=>a.defender);
-  const defenders = Object.keys(byDef);
+    const byDef = groupBy(myLabels.filter(a=>a.defender), a=>a.defender);
+    const defenders = Object.keys(byDef);
 
-  const results = defenders.map(def=>{
-    const threat = computeThreatForDefender(byDef[def], db, allAttacks);
-    return { defender:def, attacks:byDef[def], ...threat };
-  });
+    const results = defenders.map(def=>{
+      const attacks = byDef[def];
+      const uniqueSources = [...new Set(attacks.map(a=>a.source).filter(Boolean))];
 
-  results.sort((a,b)=> b.score - a.score);
+      let score = 0;
+      score += Math.min(60, attacks.length * 6);
+      score += Math.min(40, uniqueSources.length * 7);
 
-  const repeatMap = computeSourceRepeatability(allAttacks);
-  const fakeMachines = detectFakeMachine(allAttacks);
-  const fakeMap = {};
-  for(const f of fakeMachines){
-    fakeMap[f.source] = f.burst;
-  }
+      const maxRepeat = Math.max(0, ...uniqueSources.map(s => repeatMap[s] || 0));
+      if(maxRepeat >= 6) score += 15;
+      if(maxRepeat >= 12) score += 20;
 
-  let html = "";
-  for(const r of results){
-    const color = r.verdict === "CRITICAL"
-      ? "red"
-      : r.verdict === "HIGH"
-      ? "yellow"
-      : r.verdict === "MEDIUM"
-      ? "yellow"
-      : "green";
+      score = Math.max(0, Math.min(100, score));
 
-    html += `
-      <div class="item" data-def="${r.defender}">
-        <div class="inline">
-          <div>
-            <div class="mono" style="font-weight:900;">${r.defender}</div>
-            <div class="small">
-              Ataków: <b class="mono">${r.attacks.length}</b> • Źródeł: <b class="mono">${new Set(r.attacks.map(x=>x.source)).size}</b>
-              • Max powtarzalność źródła: <b class="mono">${r.maxRepeat}</b>
-            </div>
-          </div>
-          <span class="tag ${color}">${r.verdict} ${Math.round(r.score)}%</span>
-        </div>
+      let verdict = "LOW";
+      if(score >= 80) verdict = "CRITICAL";
+      else if(score >= 55) verdict = "HIGH";
+      else if(score >= 30) verdict = "MEDIUM";
 
-        <div class="collapse" id="collapse-${r.defender.replace('|','_')}"></div>
-      </div>
-    `;
-  }
-
-  board.innerHTML = html;
-
-  for(const item of board.querySelectorAll("[data-def]")){
-    item.addEventListener("click", ()=>{
-      const def = item.getAttribute("data-def");
-      const collapse = item.querySelector(".collapse");
-
-      if(collapse.style.display === "block"){
-        collapse.style.display = "none";
-        collapse.innerHTML = "";
-        return;
-      }
-
-      const list = byDef[def];
-
-      const attacksHtml = list.map(a=>{
-        const src = a.source || "???";
-        const rep = repeatMap[src] || 1;
-
-        let srcType = "UNKNOWN";
-        let srcTagColor = "blue";
-
-        if(db[src]){
-          srcType = db[src].type;
-          srcTagColor = villageColor(db[src].type, db[src].troops || {});
-        }
-
-        const fakeBurst = fakeMap[src] || 0;
-        const burstText = fakeBurst >= 5 ? `⚠️ FEJKOMAT (${fakeBurst}/1min)` : "";
-
-        return `
-          <div style="padding:10px;border-bottom:1px solid var(--border);">
-            <div class="inline">
-              <div>
-                <div class="mono">
-                  <b class="clickSource" data-src="${src}">${src}</b> → <b>${def}</b>
-                </div>
-
-                <div class="small">
-                  Gracz:
-                  <b class="clickPlayer" data-player="${escapeHtml(a.player||"UNKNOWN")}">${escapeHtml(a.player||"UNKNOWN")}</b>
-                  • Przybycie: <span class="mono">${a.arrival||"??"}</span>
-                </div>
-
-                <div class="small">
-                  Powtarzalność ataków z tej wioski: <b class="mono">${rep}</b> • ${burstText}
-                </div>
-
-                <div class="small">
-                  Dodane przez: <b class="clickOwner" data-owner="${escapeHtml(a.owner||"UNKNOWN")}">${escapeHtml(a.owner||"UNKNOWN")}</b>
-                </div>
-              </div>
-
-              <span class="tag ${srcTagColor}">${srcType}</span>
-            </div>
-
-            <div class="small mono" style="opacity:.65;margin-top:6px;">${escapeHtml(a.raw)}</div>
-          </div>
-        `;
-      }).join("");
-
-      collapse.innerHTML = attacksHtml || `<div class="small">Brak ataków.</div>`;
-      collapse.style.display = "block";
-
-      // klik w wioskę atakującą
-      collapse.querySelectorAll(".clickSource").forEach(el=>{
-        el.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          const coords = el.getAttribute("data-src");
-          switchTab("enemydb");
-          renderEnemyProfile(coords);
-        });
-      });
-
-      // klik w gracza atakującego
-      collapse.querySelectorAll(".clickPlayer").forEach(el=>{
-        el.addEventListener("click", (e)=>{
-          e.stopPropagation();
-
-          const player = el.getAttribute("data-player");
-
-          const playerAttacks = allAttacks.filter(a => (a.player || "UNKNOWN") === player);
-          const byVillage = groupBy(playerAttacks.filter(a=>a.source), a=>a.source);
-
-          let html = `
-            <div style="padding:10px;border-bottom:1px solid var(--border);">
-              <div class="mono" style="font-weight:900;">Gracz: ${escapeHtml(player)}</div>
-              <div class="small">Łącznie ataków (globalnie): <b class="mono">${playerAttacks.length}</b></div>
-              <div class="small" style="margin-top:4px;opacity:.8;">Kliknij wioskę aby przejść do profilu.</div>
-            </div>
-          `;
-
-          const villages = Object.keys(byVillage).sort((a,b)=> byVillage[b].length - byVillage[a].length);
-
-          for(const v of villages){
-            html += `
-              <div class="item" style="border-bottom:1px solid var(--border);" data-src="${v}">
-                <div class="inline">
-                  <div class="mono"><b>${v}</b></div>
-                  <span class="tag blue">${byVillage[v].length} ataków</span>
-                </div>
-              </div>
-            `;
-          }
-
-          collapse.innerHTML = html;
-
-          collapse.querySelectorAll("[data-src]").forEach(srcEl=>{
-            srcEl.addEventListener("click", (ev)=>{
-              ev.stopPropagation();
-              const coords = srcEl.getAttribute("data-src");
-
-              switchTab("enemydb");
-              renderEnemyProfile(coords);
-            });
-          });
-        });
-      });
-
-      // klik w owner (kto dodał)
-      collapse.querySelectorAll(".clickOwner").forEach(el=>{
-        el.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          const owner = el.getAttribute("data-owner");
-          if(isAdmin()){
-            switchTab("settings");
-            renderAdminUserProfile(owner);
-          }else{
-            toast("Info", `Etykiety dodał: ${owner}`);
-          }
-        });
-      });
-
+      return { defender:def, attacks, score, verdict, maxRepeat };
     });
-  }
-}
 
-/* ===================== ADMIN RENDER ===================== */
-function renderAdminStats(){
-  if(!isAdmin()) return;
+    results.sort((a,b)=> b.score - a.score);
 
-  const all = loadGlobalLabels();
-  const byOwner = groupBy(all.filter(a=>a.owner), a=>a.owner);
+    let html = "";
+    for(const r of results){
+      const color = r.verdict === "CRITICAL" ? "red" :
+                    r.verdict === "HIGH" ? "yellow" :
+                    r.verdict === "MEDIUM" ? "yellow" : "green";
 
-  const owners = Object.keys(byOwner).sort((a,b)=> byOwner[b].length - byOwner[a].length);
-
-  let html = "";
-
-  if(owners.length === 0){
-    html = `<div class="item small">Brak danych w globalnej bazie.</div>`;
-  }else{
-    for(const o of owners){
       html += `
-        <div class="item" data-owner="${escapeHtml(o)}">
+        <div class="item" data-def="${r.defender}">
           <div class="inline">
             <div>
-              <div class="mono"><b class="clickOwner">${escapeHtml(o)}</b></div>
-              <div class="small">Dodane ataki: <b class="mono">${byOwner[o].length}</b></div>
+              <div class="mono" style="font-weight:900;">${r.defender}</div>
+              <div class="small">
+                Ataków: <b class="mono">${r.attacks.length}</b>
+                • Źródeł: <b class="mono">${new Set(r.attacks.map(x=>x.source)).size}</b>
+                • Max repeat: <b class="mono">${r.maxRepeat}</b>
+              </div>
             </div>
-            <span class="tag blue">USER</span>
+            <span class="tag ${color}">${r.verdict} ${Math.round(r.score)}%</span>
+          </div>
+
+          <div class="collapse"></div>
+        </div>
+      `;
+    }
+
+    board.innerHTML = html;
+
+    board.querySelectorAll("[data-def]").forEach(item=>{
+      item.addEventListener("click", ()=>{
+        const def = item.getAttribute("data-def");
+        const collapse = item.querySelector(".collapse");
+
+        if(collapse.style.display === "block"){
+          collapse.style.display = "none";
+          collapse.innerHTML = "";
+          return;
+        }
+
+        const list = byDef[def];
+
+        const attacksHtml = list.map(a=>{
+          const src = a.source || "???";
+          const rep = repeatMap[src] || 1;
+
+          return `
+            <div style="padding:10px;border-bottom:1px solid var(--border);">
+              <div class="mono">
+                <b class="clickSource" data-src="${src}">${src}</b> → <b>${def}</b>
+              </div>
+              <div class="small">
+                Gracz: <b class="clickPlayer" data-player="${escapeHtml(a.player||"UNKNOWN")}">${escapeHtml(a.player||"UNKNOWN")}</b>
+                • Przybycie: <span class="mono">${a.arrival||"??"}</span>
+              </div>
+              <div class="small">
+                Powtarzalność tej wioski w całym plemieniu: <b class="mono">${rep}</b>
+              </div>
+              <div class="small mono" style="opacity:.65;margin-top:6px;">${escapeHtml(a.raw)}</div>
+            </div>
+          `;
+        }).join("");
+
+        collapse.innerHTML = attacksHtml;
+        collapse.style.display = "block";
+
+        collapse.querySelectorAll(".clickPlayer").forEach(el=>{
+          el.addEventListener("click", (e)=>{
+            e.stopPropagation();
+
+            const player = el.getAttribute("data-player");
+            const playerAttacks = allLabels.filter(x => (x.player||"UNKNOWN") === player);
+            const byVillage = groupBy(playerAttacks.filter(x=>x.source), x=>x.source);
+
+            let html = `
+              <div style="padding:10px;border-bottom:1px solid var(--border);">
+                <div class="mono" style="font-weight:900;">Gracz: ${escapeHtml(player)}</div>
+                <div class="small">Łącznie ataków w plemieniu: <b class="mono">${playerAttacks.length}</b></div>
+              </div>
+            `;
+
+            const villages = Object.keys(byVillage).sort((a,b)=> byVillage[b].length - byVillage[a].length);
+            for(const v of villages){
+              html += `
+                <div class="item" style="border-bottom:1px solid var(--border);">
+                  <div class="inline">
+                    <div class="mono"><b>${v}</b></div>
+                    <span class="tag blue">${byVillage[v].length} ataków</span>
+                  </div>
+                </div>
+              `;
+            }
+
+            collapse.innerHTML = html;
+          });
+        });
+
+      });
+    });
+
+  }catch(e){
+    board.innerHTML = `<div class="item small">❌ Błąd: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+/* ===================== ADMIN PANEL ===================== */
+async function renderAdminUsers(){
+  const box = document.getElementById("adminUsersList");
+
+  if(!isAdmin()){
+    box.innerHTML = `<div class="item small">Brak uprawnień.</div>`;
+    return;
+  }
+
+  box.innerHTML = `<div class="item small">⏳ Pobieranie użytkowników...</div>`;
+
+  try{
+    const users = await supaGetUsers();
+
+    let html = "";
+    for(const u of users){
+      const tag = u.is_admin ? `<span class="tag green">ADMIN</span>` : `<span class="tag blue">USER</span>`;
+
+      html += `
+        <div class="item" data-user="${u.nick}">
+          <div class="inline">
+            <div>
+              <div class="mono"><b class="clickPlayer" data-player="${escapeHtml(u.nick)}">${escapeHtml(u.nick)}</b></div>
+              <div class="small">Utworzono: ${new Date(u.created_at).toLocaleString()}</div>
+            </div>
+            ${tag}
           </div>
         </div>
       `;
     }
-  }
 
-  const box = document.getElementById("adminStats");
-  box.innerHTML = html;
+    box.innerHTML = html;
 
-  box.querySelectorAll("[data-owner]").forEach(el=>{
-    el.addEventListener("click", ()=>{
-      const owner = el.getAttribute("data-owner");
-      renderAdminUserProfile(owner);
+    box.querySelectorAll("[data-user]").forEach(el=>{
+      el.addEventListener("click", async ()=>{
+        const nick = el.getAttribute("data-user");
+
+        if(nick === currentNick()){
+          toast("Admin", "Nie możesz zmieniać swoich uprawnień tutaj.");
+          return;
+        }
+
+        const makeAdmin = confirm(`Nadać ADMIN dla ${nick}? (OK=TAK, Cancel=Zabierz admina)`);
+        await supaSetAdmin(nick, makeAdmin);
+
+        toast("Admin", makeAdmin ? `Nadano ADMIN dla ${nick}` : `Zabrano ADMIN dla ${nick}`);
+        renderAdminUsers();
+      });
     });
-  });
+
+  }catch(e){
+    box.innerHTML = `<div class="item small">❌ Błąd: ${escapeHtml(e.message)}</div>`;
+  }
 }
 
-function renderAdminUserProfile(ownerNick){
-  if(!isAdmin()) return;
-
-  const all = loadGlobalLabels();
-  const myAttacks = all.filter(a => (a.owner || "UNKNOWN") === ownerNick);
-
-  if(myAttacks.length === 0){
-    document.getElementById("adminUserProfile").innerHTML =
-      `<div class="item small">Brak danych o użytkowniku ${escapeHtml(ownerNick)}.</div>`;
-    return;
-  }
-
-  const byDef = groupBy(myAttacks.filter(a=>a.defender), a=>a.defender);
-  const bySrc = groupBy(myAttacks.filter(a=>a.source), a=>a.source);
-
-  const defs = Object.keys(byDef);
-  const srcs = Object.keys(bySrc).sort((a,b)=> bySrc[b].length - bySrc[a].length);
-
-  let html = `
-    <div class="item">
-      <div class="mono" style="font-weight:900;font-size:14px;">👤 ${escapeHtml(ownerNick)}</div>
-      <div class="small">Dodanych ataków: <b class="mono">${myAttacks.length}</b></div>
-      <div class="small">Defenderów: <b class="mono">${defs.length}</b></div>
-      <div class="divider"></div>
-
-      <button class="btnDanger" id="btnDeleteUserLabels">🗑️ Usuń etykiety tego użytkownika</button>
-    </div>
-  `;
-
-  html += `
-    <div class="item small" style="opacity:.9;">
-      <b>Defendery użytkownika:</b><br>
-      ${defs.map(d=>`<span class="mono">${escapeHtml(d)}</span>`).join(", ")}
-    </div>
-  `;
-
-  html += `
-    <div class="item small" style="opacity:.9;">
-      <b>Źródła ataków (source):</b>
-    </div>
-  `;
-
-  for(const s of srcs.slice(0,80)){
-    html += `
-      <div class="item" data-src="${escapeHtml(s)}">
-        <div class="inline">
-          <div class="mono"><b>${escapeHtml(s)}</b></div>
-          <span class="tag yellow">${bySrc[s].length} ataków</span>
-        </div>
-      </div>
-    `;
-  }
-
-  document.getElementById("adminUserProfile").innerHTML = html;
-
-  document.getElementById("btnDeleteUserLabels").addEventListener("click", ()=>{
-    if(!confirm(`Usunąć wszystkie etykiety dodane przez ${ownerNick}?`)) return;
-
-    const all = loadGlobalLabels();
-    const filtered = all.filter(a => (a.owner || "UNKNOWN") !== ownerNick);
-    saveGlobalLabels(filtered);
-
-    toast("Admin", `Usunięto etykiety użytkownika ${ownerNick}.`);
-    renderAdminStats();
-    document.getElementById("adminUserProfile").innerHTML = `<div class="item small">Usunięto dane użytkownika.</div>`;
-  });
-
-  document.querySelectorAll("#adminUserProfile [data-src]").forEach(el=>{
-    el.addEventListener("click", ()=>{
-      const coords = el.getAttribute("data-src");
-      switchTab("enemydb");
-      renderEnemyProfile(coords);
-    });
-  });
+/* ===================== TOKENS (PLACEHOLDER) ===================== */
+async function renderEnemyDB(){
+  document.getElementById("enemyList").innerHTML =
+    `<div class="item small">Tokeny będą dodane w kolejnym kroku (na razie skupiamy się na etykietach).</div>`;
 }
 
-/* ===================== UI AUTH ===================== */
-function updateUserUI(){
-  const user = getCurrentUser();
-  const info = document.getElementById("userInfo");
-
-  if(!user){
-    info.innerHTML = `<span class="tag red">NIEZALOGOWANY</span>`;
-    return;
-  }
-
-  const role = isAdmin() ? `<span class="tag green">ADMIN</span>` : `<span class="tag blue">USER</span>`;
-  info.innerHTML = `Zalogowany: <b class="mono">${escapeHtml(user.nick)}</b> ${role}`;
-
-  document.getElementById("adminTag").className = isAdmin() ? "tag green" : "tag red";
-  document.getElementById("adminTag").textContent = isAdmin() ? "ADMIN" : "BRAK UPRAWNIEŃ";
-
-  document.getElementById("adminPanel").classList.toggle("hidden", !isAdmin());
-}
-
-/* ===================== TAB SYSTEM ===================== */
-function switchTab(name){
-  if(!isLoggedIn()){
-    document.querySelectorAll(".tabPanel").forEach(p=>p.style.display="none");
-    document.getElementById("tab-login").style.display="block";
-    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-    return;
-  }
-
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.querySelectorAll(".tabPanel").forEach(p=>p.style.display="none");
-
-  document.querySelector(`.tab[data-tab="${name}"]`).classList.add("active");
-  document.getElementById("tab-"+name).style.display="block";
-
-  if(name === "enemydb") renderEnemyDB();
-  if(name === "analysis") renderThreatBoard();
-  if(name === "notes") renderTokenStats();
-  if(name === "settings"){
-    updateUserUI();
-    if(isAdmin()) renderAdminStats();
-  }
+function renderEnemyProfile(coords){
+  document.getElementById("enemyProfile").innerHTML =
+    `<div class="item small">Profil tokenów jeszcze nie jest aktywny.</div>`;
 }
 
 /* ===================== EVENTS ===================== */
@@ -1531,73 +960,71 @@ document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click", ()=> switchTab(tab.getAttribute("data-tab")));
 });
 
-/* ===== AUTH EVENTS ===== */
-document.getElementById("btnRegister").addEventListener("click", ()=>{
-  const nick = normalizeNick(document.getElementById("regNick").value);
-  const pass = document.getElementById("regPass").value.trim();
-  const code = document.getElementById("regCode").value.trim();
-
-  if(!nick || nick.length < 3){
-    toast("Błąd", "Nick jest za krótki.");
-    return;
-  }
-  if(!pass || pass.length < 3){
-    toast("Błąd", "Hasło jest za krótkie.");
-    return;
-  }
-  if(code !== TRIBE_CODE){
-    toast("Błąd", "Niepoprawny kod plemienia.");
-    return;
-  }
-
-  const users = loadUsers();
-  if(users[nick]){
-    toast("Błąd", "Taki nick już istnieje.");
-    return;
-  }
-
-  users[nick] = {
-    nick,
-    pass,
-    createdAt: nowISO()
-  };
-
-  saveUsers(users);
-  toast("OK", "Konto utworzone. Możesz się zalogować.");
+document.getElementById("btnClearLabels").addEventListener("click", ()=>{
+  document.getElementById("labelsInput").value = "";
+  document.getElementById("labelsSummary").innerHTML = `<div class="item small">Brak danych.</div>`;
 });
 
-document.getElementById("btnLogin").addEventListener("click", ()=>{
-  const nick = normalizeNick(document.getElementById("loginNick").value);
+/* LOGIN */
+document.getElementById("btnLogin").addEventListener("click", async ()=>{
+  const nick = document.getElementById("loginNick").value.trim();
   const pass = document.getElementById("loginPass").value.trim();
 
-  const users = loadUsers();
-  if(!users[nick] || users[nick].pass !== pass){
-    toast("Błąd", "Niepoprawny login lub hasło.");
+  if(!nick || !pass){
+    toast("Logowanie", "Podaj nick i hasło.");
     return;
   }
 
-  saveSession({ nick, loggedAt: nowISO() });
-  toast("OK", `Zalogowano jako ${nick}`);
+  try{
+    const user = await supaLogin(nick, pass);
+    if(!user){
+      toast("Logowanie", "Błędny nick lub hasło.");
+      return;
+    }
 
-  updateUserUI();
-  switchTab("labels");
+    setSession(user);
+
+    toast("Logowanie", `Zalogowano jako ${user.nick}`);
+    bootAfterLogin();
+
+  }catch(e){
+    toast("Błąd", e.message);
+  }
 });
 
+/* REGISTER */
+document.getElementById("btnRegister").addEventListener("click", async ()=>{
+  const nick = document.getElementById("regNick").value.trim();
+  const pass = document.getElementById("regPass").value.trim();
+  const code = document.getElementById("regTribeCode").value.trim();
+
+  if(!nick || !pass){
+    toast("Rejestracja", "Podaj nick i hasło.");
+    return;
+  }
+
+  if(code !== TRIBE_CODE){
+    toast("Rejestracja", "Zły kod plemienia.");
+    return;
+  }
+
+  try{
+    const user = await supaRegister(nick, pass);
+    toast("Rejestracja", `Konto utworzone: ${user.nick}`);
+  }catch(e){
+    toast("Błąd", e.message);
+  }
+});
+
+/* LOGOUT */
 document.getElementById("btnLogout").addEventListener("click", ()=>{
   clearSession();
-  toast("Konto", "Wylogowano.");
-  updateUserUI();
-  switchTab("login");
+  toast("Wylogowano", "Sesja usunięta.");
+  location.reload();
 });
 
-/* ===== LABELS TAB ===== */
-document.getElementById("btnParseLabels").addEventListener("click", ()=>{
-  const user = getCurrentUser();
-  if(!user){
-    toast("Błąd", "Musisz być zalogowany.");
-    return;
-  }
-
+/* UPLOAD LABELS */
+document.getElementById("btnUploadLabels").addEventListener("click", async ()=>{
   const text = document.getElementById("labelsInput").value;
   const parsed = parseEnemyLabels(text);
 
@@ -1606,292 +1033,101 @@ document.getElementById("btnParseLabels").addEventListener("click", ()=>{
     return;
   }
 
-  // przypisanie owner + zapis defenderów jako moje wioski
-  const myVillages = new Set(loadMyVillages());
-  for(const a of parsed){
-    a.owner = user.nick;
-    a.ownerAddedAt = nowISO();
-    if(a.defender) myVillages.add(a.defender);
-  }
-  saveMyVillages([...myVillages]);
+  try{
+    await supaUploadLabels(parsed);
 
-  // zapis globalny bez duplikatów
-  const old = loadGlobalLabels();
-  const combined = old.concat(parsed);
+    const byDef = groupBy(parsed, x=>x.defender);
+    let html = "";
 
-  const uniqueMap = {};
-  for(const a of combined){
-    const key = `${a.defender}|${a.source}|${a.arrival}|${a.raw}`;
-    uniqueMap[key] = a;
-  }
-  saveGlobalLabels(Object.values(uniqueMap));
-
-  // podsumowanie tylko nowych
-  const summary = document.getElementById("labelsSummary");
-  const byDef = groupBy(parsed, a=>a.defender);
-
-  let html = "";
-  for(const def in byDef){
-    html += `<div class="item">
-      <div class="inline">
-        <div>
-          <div class="mono"><b>${escapeHtml(def)}</b></div>
-          <div class="small">Nowych ataków: <b class="mono">${byDef[def].length}</b></div>
+    for(const def in byDef){
+      html += `
+        <div class="item">
+          <div class="inline">
+            <div>
+              <div class="mono"><b>${def}</b></div>
+              <div class="small">Dodano ataków: <b class="mono">${byDef[def].length}</b></div>
+            </div>
+            <span class="tag green">OK</span>
+          </div>
         </div>
-        <span class="tag blue">OK</span>
-      </div>
-    </div>`;
+      `;
+    }
+
+    document.getElementById("labelsSummary").innerHTML = html;
+    toast("Etykiety", `Wysłano do bazy: ${parsed.length}`);
+
+  }catch(e){
+    toast("Błąd", e.message);
   }
-
-  summary.innerHTML = html;
-  toast("Etykiety", `Dodano ataków: ${parsed.length}`);
 });
 
-document.getElementById("btnClearLabels").addEventListener("click", ()=>{
-  document.getElementById("labelsInput").value = "";
-  document.getElementById("labelsSummary").innerHTML = `<div class="item small">Brak danych.</div>`;
-});
-
-/* ===== DELETE MY LABELS ===== */
-document.getElementById("btnDeleteMyLabels").addEventListener("click", ()=>{
-  const user = getCurrentUser();
-  if(!user) return;
-
-  if(!confirm("Usunąć wszystkie Twoje etykiety z globalnej bazy?")) return;
-
-  const all = loadGlobalLabels();
-  const filtered = all.filter(a => (a.owner || "UNKNOWN") !== user.nick);
-  saveGlobalLabels(filtered);
-
-  toast("OK", "Usunięto Twoje etykiety.");
-});
-
-/* ===== NOTES TAB ===== */
-document.getElementById("btnParseTokens").addEventListener("click", ()=>{
-  const text = document.getElementById("notesInput").value;
-  const tokens = extractTokens(text);
-
-  if(tokens.length === 0){
-    renderTokenStats(0);
-    toast("Tokeny", "Nie znaleziono tokenów HN1/HN2.");
-    return;
-  }
-
-  renderTokenStats(tokens.length);
-  toast("Tokeny", `Wykryto tokenów: ${tokens.length}`);
-});
-
-document.getElementById("btnAddTokens").addEventListener("click", ()=>{
-  if(!isAdmin()){
-    toast("Brak dostępu", "Tylko admin może dodawać tokeny.");
-    return;
-  }
-
-  const text = document.getElementById("notesInput").value;
-  const tokens = extractTokens(text);
-
-  if(tokens.length === 0){
-    toast("Brak tokenów", "Nie wykryto HN1/HN2.");
-    return;
-  }
-
-  const db = loadDB();
-  let added = 0;
-
-  for(const token of tokens){
-    try{
-      const decoded = decodeHN(token);
-      const coords = `${decoded.x}|${decoded.y}`;
-      const troops = troopsArrayToObj(decoded.u);
-      const type = classifyVillage(troops);
-
-      const offKilled = decoded.k === 1 || decoded.offKilled === true;
-
-      db[coords] = {
-        coords,
-        troops,
-        troopsAfter: troops,
-        type,
-        updatedAt: nowISO(),
-        token,
-        reportTime: decoded.t || Date.now(),
-        reportId: decoded.r || null,
-        tokenVersion: decoded._version || "HN?",
-        offKilledAt: offKilled ? (decoded.t || Date.now()) : null
-      };
-
-      added++;
-    }catch(e){}
-  }
-
-  saveDB(db);
-  toast("Baza", `Dodano/zaaktualizowano: ${added} wiosek.`);
-  renderTokenStats();
-});
-
-document.getElementById("btnClearNotes").addEventListener("click", ()=>{
-  document.getElementById("notesInput").value = "";
-  renderTokenStats();
-});
-
-/* ===== ENEMY DB TAB ===== */
-document.getElementById("btnEnemySearch").addEventListener("click", ()=>{
-  const coords = document.getElementById("enemySearch").value.trim();
-  if(!coords) return;
-  renderEnemyProfile(coords);
-});
-
-/* ===== ANALYSIS TAB ===== */
+/* RUN ANALYSIS */
 document.getElementById("btnRunThreat").addEventListener("click", ()=>{
   renderThreatBoard();
-  toast("Analiza", "Przeliczono zagrożenia.");
-});
-document.getElementById("btnClearThreat").addEventListener("click", ()=>{
-  document.getElementById("threatBoard").innerHTML = `<div class="item small">Wyczyść dane w ustawieniach jeśli chcesz usunąć historię.</div>`;
 });
 
-/* ===== SETTINGS ADMIN ===== */
-document.getElementById("btnGrantAdmin").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
+/* SETTINGS - DELETE MY LABELS */
+document.getElementById("btnDeleteMyLabels").addEventListener("click", async ()=>{
+  if(!confirm("Usunąć wszystkie Twoje etykiety z bazy?")) return;
 
-  const nick = normalizeNick(document.getElementById("adminNickInput").value);
-  if(!nick){
-    toast("Błąd", "Podaj nick.");
+  try{
+    await supaDeleteMyLabels();
+    toast("Ustawienia", "Usunięto Twoje etykiety.");
+  }catch(e){
+    toast("Błąd", e.message);
+  }
+});
+
+/* ADMIN DELETE ALL */
+document.getElementById("btnDeleteAllLabels").addEventListener("click", async ()=>{
+  if(!isAdmin()){
+    toast("Admin", "Brak uprawnień.");
     return;
   }
 
-  const users = loadUsers();
-  if(!users[nick]){
-    toast("Błąd", "Nie ma takiego użytkownika.");
-    return;
+  if(!confirm("Usunąć WSZYSTKIE etykiety całego plemienia?")) return;
+
+  try{
+    await supaDeleteAllLabels();
+    toast("Admin", "Usunięto całą bazę etykiet.");
+  }catch(e){
+    toast("Błąd", e.message);
   }
-
-  const admins = loadAdmins();
-  if(admins.includes(nick)){
-    toast("Info", "Ten gracz już jest adminem.");
-    return;
-  }
-
-  admins.push(nick);
-  saveAdmins(admins);
-
-  toast("Admin", `Nadano admina: ${nick}`);
-  updateUserUI();
 });
 
-document.getElementById("btnRevokeAdmin").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-
-  const nick = normalizeNick(document.getElementById("adminNickInput").value);
-  if(!nick){
-    toast("Błąd", "Podaj nick.");
-    return;
-  }
-
-  if(nick === DEFAULT_ADMIN){
-    toast("Błąd", "Nie można usunąć głównego admina.");
-    return;
-  }
-
-  const admins = loadAdmins().filter(a => a !== nick);
-  saveAdmins(admins);
-
-  toast("Admin", `Usunięto admina: ${nick}`);
-  updateUserUI();
-});
-
-document.getElementById("btnResetLabels").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-
-  if(!confirm("Usunąć wszystkie globalne etykiety ataków?")) return;
-  localStorage.removeItem(GLOBAL_LABELS_KEY);
-
-  toast("Reset", "Usunięto globalne etykiety.");
-});
-
-document.getElementById("btnResetAll").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-
-  if(!confirm("Usunąć CAŁĄ bazę (tokeny + etykiety + konta)?")) return;
-
-  localStorage.removeItem(DB_KEY);
-  localStorage.removeItem(GLOBAL_LABELS_KEY);
-  localStorage.removeItem(USERS_KEY);
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(ADMINS_KEY);
-
-  toast("Reset", "Wyczyszczono wszystko.");
-  location.reload();
-});
-
-document.getElementById("btnExport").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-
-  const payload = {
-    version:"v4",
-    exportedAt: nowISO(),
-    db: loadDB(),
-    globalLabels: loadGlobalLabels(),
-    users: loadUsers(),
-    admins: loadAdmins()
-  };
-
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "tribal_intel_export.json";
-  a.click();
-  URL.revokeObjectURL(url);
-
-  toast("Export", "Zapisano plik JSON.");
-});
-
-document.getElementById("btnImport").addEventListener("click", ()=>{
-  if(!isAdmin()) return;
-
-  const inp = document.createElement("input");
-  inp.type="file";
-  inp.accept="application/json";
-  inp.onchange = ()=>{
-    const file = inp.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      try{
-        const obj = JSON.parse(reader.result);
-
-        if(obj.db) saveDB(obj.db);
-        if(obj.globalLabels) saveGlobalLabels(obj.globalLabels);
-        if(obj.users) saveUsers(obj.users);
-        if(obj.admins) saveAdmins(obj.admins);
-
-        toast("Import", "Zaimportowano dane.");
-      }catch(e){
-        toast("Błąd", "Nie udało się zaimportować.");
-      }
-    };
-    reader.readAsText(file);
-  };
-  inp.click();
+/* ADMIN REFRESH */
+document.getElementById("btnRefreshAdmin").addEventListener("click", ()=>{
+  renderAdminUsers();
 });
 
 /* ===================== INIT ===================== */
-function init(){
-  updateUserUI();
+function bootAfterLogin(){
+  showTabs();
 
-  if(!isLoggedIn()){
-    document.querySelectorAll(".tabPanel").forEach(p=>p.style.display="none");
-    document.getElementById("tab-login").style.display="block";
-    return;
+  const tag = document.getElementById("userTag");
+  tag.textContent = currentNick();
+  tag.className = isAdmin() ? "tag red" : "tag green";
+
+  document.getElementById("btnLogout").classList.remove("hidden");
+
+  // admin tab only if admin
+  if(!isAdmin()){
+    document.querySelector('.tab[data-tab="admin"]').classList.add("hidden");
+  }else{
+    document.querySelector('.tab[data-tab="admin"]').classList.remove("hidden");
   }
 
   switchTab("labels");
-  renderTokenStats();
-  renderEnemyDB();
 }
 
-init();
+(function init(){
+  if(isLoggedIn()){
+    bootAfterLogin();
+  }else{
+    showLogin();
+  }
+})();
 </script>
+
 </body>
 </html>
