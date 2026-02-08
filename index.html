@@ -1476,46 +1476,62 @@ async function renderTopEnemySources(){
     box.innerHTML = html;
 
     // klik w player (jak w analizie)
-    box.querySelectorAll(".clickPlayer").forEach(el=>{
-      el.addEventListener("click", async (e)=>{
-        e.stopPropagation();
+   box.querySelectorAll(".clickPlayer").forEach(el=>{
+  el.addEventListener("click", (e)=>{
+    e.stopPropagation();
 
-        const player = el.getAttribute("data-player");
+    const player = el.getAttribute("data-player");
+    const parentItem = el.closest(".item");
+    if(!parentItem) return;
 
-        const playerAttacks = all.filter(a => (a.player || "UNKNOWN") === player);
-        const byVillage = groupBy(playerAttacks.filter(a=>a.source), a=>a.source);
+    let collapse = parentItem.querySelector(".playerCollapse");
 
-        let html = `
-          <div style="padding:10px;border-bottom:1px solid var(--border);">
-            <div class="mono" style="font-weight:900;">Gracz: ${escapeHtml(player)}</div>
-            <div class="small">Łącznie ataków (globalnie): <b class="mono">${playerAttacks.length}</b></div>
-            <div class="small" style="margin-top:4px;opacity:.8;">Kliknij wioskę aby przejść do profilu.</div>
+    // jeśli już istnieje -> toggle
+    if(collapse){
+      collapse.style.display = (collapse.style.display === "block") ? "none" : "block";
+      return;
+    }
+
+    collapse = document.createElement("div");
+    collapse.className = "collapse playerCollapse";
+    collapse.style.display = "block";
+    parentItem.appendChild(collapse);
+
+    const playerAttacks = all.filter(a => (a.player || "UNKNOWN") === player);
+    const byVillage = groupBy(playerAttacks.filter(a=>a.source), a=>a.source);
+
+    let html = `
+      <div style="padding:10px;border-bottom:1px solid var(--border);">
+        <div class="mono" style="font-weight:900;">Gracz: ${escapeHtml(player)}</div>
+        <div class="small">Łącznie ataków (globalnie): <b class="mono">${playerAttacks.length}</b></div>
+        <div class="small" style="margin-top:4px;opacity:.8;">Kliknij wioskę aby przejść do profilu.</div>
+      </div>
+    `;
+
+    const villages = Object.keys(byVillage).sort((a,b)=> byVillage[b].length - byVillage[a].length);
+
+    for(const v of villages.slice(0, 50)){
+      html += `
+        <div class="item" style="border-bottom:1px solid var(--border);" data-src="${v}">
+          <div class="inline">
+            <div class="mono"><b>${v}</b></div>
+            <span class="tag blue">${byVillage[v].length} ataków</span>
           </div>
-        `;
+        </div>
+      `;
+    }
 
-        const villages = Object.keys(byVillage).sort((a,b)=> byVillage[b].length - byVillage[a].length);
+    collapse.innerHTML = html;
 
-        for(const v of villages.slice(0, 60)){
-          html += `
-            <div class="item" style="border-bottom:1px solid var(--border);" data-src="${v}">
-              <div class="inline">
-                <div class="mono"><b>${v}</b></div>
-                <span class="tag blue">${byVillage[v].length} ataków</span>
-              </div>
-            </div>
-          `;
-        }
-
-        box.innerHTML = html;
-
-        box.querySelectorAll("[data-src]").forEach(srcEl=>{
-          srcEl.addEventListener("click", async ()=>{
-            const coords = srcEl.getAttribute("data-src");
-            await renderEnemyProfile(coords);
-          });
-        });
+    collapse.querySelectorAll("[data-src]").forEach(srcEl=>{
+      srcEl.addEventListener("click", async (ev)=>{
+        ev.stopPropagation();
+        const coords = srcEl.getAttribute("data-src");
+        await renderEnemyProfile(coords);
       });
     });
+  });
+});
 
     // klik w źródło (wioskę)
     box.querySelectorAll("[data-src]").forEach(el=>{
