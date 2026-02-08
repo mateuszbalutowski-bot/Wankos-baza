@@ -1060,7 +1060,13 @@ function threatColor(threat){
   if(threat === "MEDIUM") return "yellow";
   return "green";
 }
+function repeatColor(rep){
+  rep = Number(rep || 0);
 
+  if(rep <= 1) return "red";      // 1 atak
+  if(rep <= 4) return "yellow";   // 2-4 ataki
+  return "green";                 // 5+ ataków
+}
 /* ===================== PARSERS ===================== */
 function extractTokens(text){
   const re = /HN[12]:[A-Za-z0-9+\/=\-$]+/g;
@@ -1700,6 +1706,7 @@ async function renderThreatBoard(){
       const attacksHtml = list.map(a=>{
         const src = a.source || "???";
         const rep = repeatMap[src] || 1;
+const repColor = repeatColor(rep);
 
         let srcType = "UNKNOWN";
         let srcTagColor = "blue";
@@ -1727,8 +1734,10 @@ async function renderThreatBoard(){
                 </div>
 
                 <div class="small">
-                  Powtarzalność ataków z tej wioski: <b class="mono">${rep}</b> • ${burstText}
-                </div>
+  Powtarzalność ataków z tej wioski:
+  <span class="tag ${repColor}">${rep}</span>
+  • ${burstText}
+</div>
 
                 <div class="small">
                   Dodane przez: <b class="clickOwner" data-owner="${escapeHtml(a.owner||"UNKNOWN")}">${escapeHtml(a.owner||"UNKNOWN")}</b>
