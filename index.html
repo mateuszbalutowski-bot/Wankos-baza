@@ -484,6 +484,15 @@ function toast(title, msg){
   setTimeout(()=>{ t.style.display="none"; }, 3200);
 }
 function escapeHtml(s){
+function groupBy(arr, keyFn){
+  const m = {};
+  for(const item of arr){
+    const k = keyFn(item);
+    if(!m[k]) m[k] = [];
+    m[k].push(item);
+  }
+  return m;
+}
   return String(s).replace(/[&<>"']/g, m => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[m]));
@@ -938,10 +947,12 @@ function decodeHN(token){
   }
 }
 
-function findCoordsInObject(obj){
-  const str = JSON.stringify(obj);
-  const match = str.match(/(\d{1,3}\|\d{1,3})/);
-  return match ? match[1] : null;
+function getCoordsFromDecoded(decoded){
+  if(!decoded) return null;
+  if(typeof decoded.x === "number" && typeof decoded.y === "number"){
+    return decoded.x + "|" + decoded.y;
+  }
+  return null;
 }
 
 /* ===================== TOKENS UPLOAD (ADMIN) ===================== */
@@ -972,7 +983,7 @@ async function uploadTokens(){
     if(!decoded) continue;
 
     rows.push({
-      coords: findCoordsInObject(decoded) || "???|???",
+      coords: getCoordsFromDecoded(decoded) || "???|???",
       token: t,
       type: "UNKNOWN",
       troops: decoded,
@@ -988,10 +999,10 @@ async function uploadTokens(){
   const { error } = await supa.from("enemy_tokens").insert(rows);
 
   if(error){
-    toast("Błąd", "Nie udało się dodać tokenów.");
-    console.error(error);
-    return;
-  }
+  toast("Błąd", "Nie udało się dodać tokenów: " + error.message);
+  console.error("SUPABASE INSERT ERROR:", error);
+  return;
+}
 
   toast("OK", `Dodano tokenów: ${rows.length}`);
   document.getElementById("tokenInput").value = "";
