@@ -270,24 +270,6 @@
       margin-bottom:6px;
       font-size:12px;
     }
-
-    .clickSource{
-      cursor:pointer;
-      color: rgba(96,165,250,0.95);
-      text-decoration: underline;
-    }
-    .clickSource:hover{
-      filter: brightness(1.2);
-    }
-
-    .clickPlayer{
-      cursor:pointer;
-      color: rgba(52,211,153,0.95);
-      text-decoration: underline;
-    }
-    .clickPlayer:hover{
-      filter: brightness(1.2);
-    }
   </style>
 </head>
 
@@ -324,17 +306,18 @@
         </h2>
 
         <div class="hint">
-          Zaloguj się nickiem z gry. Dostęp do panelu mają tylko osoby z kodem plemienia.
-          <br><b>Kod plemienia:</b> <span class="mono">Wankos2026</span>
+          Dostęp tylko dla członków plemienia.
+          Kod plemienia nie jest publiczny.
         </div>
 
         <div class="divider"></div>
 
         <h2>🆕 Rejestracja</h2>
         <div class="row">
+          <input id="regEmail" placeholder="Email..." />
           <input id="regNick" placeholder="Nick z gry..." />
           <input id="regPass" type="password" placeholder="Hasło..." />
-          <input id="regCode" placeholder="Kod plemienia..." />
+          <input id="regTribeCode" placeholder="Kod plemienia..." />
           <button id="btnRegister" class="btn2">Załóż konto</button>
         </div>
 
@@ -342,7 +325,7 @@
 
         <h2>🔑 Logowanie</h2>
         <div class="row">
-          <input id="loginNick" placeholder="Nick..." />
+          <input id="loginEmail" placeholder="Email..." />
           <input id="loginPass" type="password" placeholder="Hasło..." />
           <button id="btnLogin" class="btn2">Zaloguj</button>
           <button id="btnLogout" class="btnDanger">Wyloguj</button>
@@ -360,9 +343,7 @@
         </h2>
 
         <div class="hint">
-          Wklej swoje etykiety z gry. System:
-          <br>✅ zapisze je w bazie plemienia
-          <br>✅ przypisze obrońców do Twojego konta
+          Wklej swoje etykiety z gry. System zapisze je w bazie plemienia.
         </div>
 
         <textarea id="labelsInput" placeholder="Wklej etykiety ataków tutaj..."></textarea>
@@ -412,11 +393,11 @@
         </h2>
 
         <div class="hint">
-          Tutaj będą tokeny OFF/DEFF (w przyszłości). Na razie jest tylko placeholder.
+          Tokeny mogą dodawać tylko admini.
         </div>
 
-        <div class="listBox">
-          <div class="item small">W tej wersji jeszcze nie dodajemy tokenów do Supabase.</div>
+        <div id="enemyTokenPanel" class="listBox">
+          <div class="item small">Brak danych.</div>
         </div>
       </div>
     </div>
@@ -430,7 +411,7 @@
         </h2>
 
         <div class="hint">
-          Użytkownik może usuwać swoje etykiety. Admin może zarządzać bazą plemienia.
+          Użytkownik może usuwać swoje etykiety. Admin może zarządzać bazą.
         </div>
 
         <div class="divider"></div>
@@ -455,7 +436,6 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -464,31 +444,6 @@ const SUPABASE_URL = "https://cixrktawkfxaexhzhnho.supabase.co";
 const SUPABASE_KEY = "sb_publishable_kUYmC66z6c9g3qrj0hx2Zg_ZV__s0zA";
 
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const TRIBE_CODE = "Wankos2026";
-
-/* ===================== SESSION ===================== */
-const SESSION_KEY = "wankos_session_v1";
-
-function saveSession(user){
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
-}
-function loadSession(){
-  try{
-    const raw = localStorage.getItem(SESSION_KEY);
-    if(!raw) return null;
-    return JSON.parse(raw);
-  }catch(e){
-    return null;
-  }
-}
-function clearSession(){
-  localStorage.removeItem(SESSION_KEY);
-}
-
-function currentUser(){
-  return loadSession();
-}
 
 /* ===================== UTIL ===================== */
 function toast(title, msg){
@@ -502,7 +457,6 @@ function escapeHtml(s){
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[m]));
 }
-
 function groupBy(arr, keyFn){
   const m = {};
   for(const item of arr){
@@ -511,6 +465,39 @@ function groupBy(arr, keyFn){
     m[k].push(item);
   }
   return m;
+}
+
+/* ===================== AUTH HELPERS ===================== */
+async function getCurrentUser(){
+  const { data } = await supa.auth.getUser();
+  return data?.user || null;
+}
+
+async function getMyProfile(){
+  const user = await getCurrentUser();
+  if(!user) return null;
+
+  const { data, error } = await supa
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if(error) return null;
+  return data;
+}
+
+async function updateLoginUI(){
+  const prof = await getMyProfile();
+  const status = document.getElementById("loginStatus");
+
+  if(!prof){
+    status.className = "tag red";
+    status.textContent = "NIEZALOGOWANY";
+  }else{
+    status.className = "tag green";
+    status.textContent = "ZALOGOWANY: " + prof.nick;
+  }
 }
 
 /* ===================== TABS ===================== */
@@ -522,42 +509,47 @@ function switchTab(name){
   document.getElementById("tab-"+name).style.display="block";
 
   if(name === "settings") updateSettingsUI();
+  if(name === "enemydb") renderEnemyTokens();
 }
 
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click", ()=> switchTab(tab.getAttribute("data-tab")));
 });
 
-/* ===================== AUTH ===================== */
+/* ===================== REGISTER ===================== */
 async function registerUser(){
+  const email = document.getElementById("regEmail").value.trim();
   const nick = document.getElementById("regNick").value.trim();
   const pass = document.getElementById("regPass").value.trim();
-  const code = document.getElementById("regCode").value.trim();
+  const code = document.getElementById("regTribeCode").value.trim();
 
-  if(!nick || !pass || !code){
-    toast("Błąd", "Wpisz nick, hasło i kod plemienia.");
+  if(!email || !nick || !pass || !code){
+    toast("Błąd", "Wpisz email, nick, hasło i kod plemienia.");
     return;
   }
 
-  if(code !== TRIBE_CODE){
-    toast("Błąd", "Zły kod plemienia.");
-    return;
-  }
-
-  const { data: existing } = await supa
-    .from("users")
-    .select("id")
-    .eq("nick", nick)
+  // sprawdzamy kod plemienia z tabeli tribe_config
+  const { data: cfg, error: cfgErr } = await supa
+    .from("tribe_config")
+    .select("tribe_code")
+    .eq("id", 1)
     .maybeSingle();
 
-  if(existing){
-    toast("Błąd", "Taki nick już istnieje.");
+  if(cfgErr || !cfg){
+    toast("Błąd", "Brak konfiguracji tribe_config.");
     return;
   }
 
-  const { error } = await supa
-    .from("users")
-    .insert([{ nick, password: pass, is_admin:false }]);
+  if(code !== cfg.tribe_code){
+    toast("Błąd", "Niepoprawny kod plemienia.");
+    return;
+  }
+
+  // rejestracja supabase auth
+  const { data, error } = await supa.auth.signUp({
+    email,
+    password: pass
+  });
 
   if(error){
     toast("Błąd", "Nie udało się założyć konta.");
@@ -565,57 +557,42 @@ async function registerUser(){
     return;
   }
 
-  toast("OK", "Konto założone. Teraz się zaloguj.");
+  toast("OK", "Konto założone. Teraz potwierdź email i zaloguj się.");
 }
 
+/* ===================== LOGIN ===================== */
 async function loginUser(){
-  const nick = document.getElementById("loginNick").value.trim();
+  const email = document.getElementById("loginEmail").value.trim();
   const pass = document.getElementById("loginPass").value.trim();
 
-  if(!nick || !pass){
-    toast("Błąd", "Podaj nick i hasło.");
+  if(!email || !pass){
+    toast("Błąd", "Podaj email i hasło.");
     return;
   }
 
-  const { data, error } = await supa
-    .from("users")
-    .select("*")
-    .eq("nick", nick)
-    .eq("password", pass)
-    .maybeSingle();
+  const { error } = await supa.auth.signInWithPassword({
+    email,
+    password: pass
+  });
 
-  if(error || !data){
+  if(error){
     toast("Błąd", "Niepoprawny login lub hasło.");
     return;
   }
 
-  saveSession(data);
-  toast("Zalogowano", `Witaj ${nick}!`);
-
-  updateLoginUI();
+  toast("OK", "Zalogowano.");
+  await updateLoginUI();
   switchTab("labels");
 }
 
-function logoutUser(){
-  clearSession();
-  toast("Wylogowano", "Sesja usunięta.");
-  updateLoginUI();
+async function logoutUser(){
+  await supa.auth.signOut();
+  toast("Wylogowano", "Sesja zakończona.");
+  await updateLoginUI();
   switchTab("login");
 }
 
-function updateLoginUI(){
-  const s = currentUser();
-  const status = document.getElementById("loginStatus");
-  if(!s){
-    status.className = "tag red";
-    status.textContent = "NIEZALOGOWANY";
-  }else{
-    status.className = "tag green";
-    status.textContent = "ZALOGOWANY: " + s.nick;
-  }
-}
-
-/* ===================== PARSER LABELS ===================== */
+/* ===================== LABEL PARSER ===================== */
 function parseEnemyLabels(text){
   const lines = text.split("\n").map(x=>x.trim()).filter(Boolean);
   const attacks = [];
@@ -657,7 +634,7 @@ function parseEnemyLabels(text){
 
 /* ===================== UPLOAD LABELS ===================== */
 async function uploadLabels(){
-  const user = currentUser();
+  const user = await getCurrentUser();
   if(!user){
     toast("Brak dostępu", "Zaloguj się.");
     switchTab("login");
@@ -714,14 +691,13 @@ async function uploadLabels(){
 
 /* ===================== ANALYSIS ===================== */
 async function runAnalysis(){
-  const user = currentUser();
+  const user = await getCurrentUser();
   if(!user){
     toast("Brak dostępu", "Zaloguj się.");
     switchTab("login");
     return;
   }
 
-  // all attacks in tribe db
   const { data: allAttacks, error } = await supa
     .from("attack_labels")
     .select("*");
@@ -732,7 +708,6 @@ async function runAnalysis(){
     return;
   }
 
-  // only my defenders
   const myAttacks = allAttacks.filter(a => a.owner_id === user.id);
 
   if(myAttacks.length === 0){
@@ -755,7 +730,6 @@ async function runAnalysis(){
   for(const def of defenders){
     const list = byDef[def];
     const uniqueSources = [...new Set(list.map(x=>x.source).filter(Boolean))];
-
     const maxRepeat = Math.max(1, ...uniqueSources.map(s => repeatMap[s] || 1));
 
     html += `
@@ -776,10 +750,10 @@ async function runAnalysis(){
         ${list.map(a=>`
           <div class="small" style="padding:6px 0;border-bottom:1px solid var(--border);">
             <div class="mono">
-              <b class="clickSource">${a.source || "???"}</b> → <b>${a.defender}</b>
+              <b>${a.source || "???"}</b> → <b>${a.defender}</b>
             </div>
             <div>
-              Gracz: <b class="clickPlayer">${escapeHtml(a.player || "UNKNOWN")}</b>
+              Gracz: <b>${escapeHtml(a.player || "UNKNOWN")}</b>
               • Przybycie: <span class="mono">${a.arrival || "??"}</span>
               • Powtarzalność: <b class="mono">${repeatMap[a.source] || 1}</b>
             </div>
@@ -793,9 +767,9 @@ async function runAnalysis(){
   toast("Analiza", "Przeliczono dane.");
 }
 
-/* ===================== SETTINGS ===================== */
+/* ===================== DELETE MY LABELS ===================== */
 async function deleteMyLabels(){
-  const user = currentUser();
+  const user = await getCurrentUser();
   if(!user){
     toast("Brak dostępu", "Zaloguj się.");
     return;
@@ -817,32 +791,37 @@ async function deleteMyLabels(){
   toast("OK", "Usunięto Twoje etykiety.");
 }
 
+/* ===================== ADMIN PANEL ===================== */
 async function updateSettingsUI(){
-  const user = currentUser();
+  const prof = await getMyProfile();
   const tag = document.getElementById("adminTag");
   const adminPanel = document.getElementById("adminPanel");
 
-  if(!user){
+  if(!prof){
     tag.className = "tag red";
     tag.textContent = "USER";
     adminPanel.innerHTML = `<div class="item small">Zaloguj się aby zobaczyć ustawienia.</div>`;
     return;
   }
 
-  if(user.is_admin){
+  if(prof.is_admin){
     tag.className = "tag green";
     tag.textContent = "ADMIN";
 
-    const { data: users, error } = await supa.from("users").select("id,nick,is_admin,created_at");
+    const { data: users, error } = await supa
+      .from("profiles")
+      .select("id,nick,is_admin,created_at");
+
     if(error){
       adminPanel.innerHTML = `<div class="item small">Błąd pobierania listy użytkowników.</div>`;
       return;
     }
 
-    let html = `<div class="item small"><b>Lista użytkowników:</b></div>`;
+    let html = `<div class="item small"><b>Lista użytkowników (kliknij aby zmienić admin):</b></div>`;
+
     for(const u of users){
       html += `
-        <div class="item">
+        <div class="item" style="cursor:pointer;" data-userid="${u.id}">
           <div class="inline">
             <div>
               <div class="mono"><b>${escapeHtml(u.nick)}</b></div>
@@ -855,11 +834,137 @@ async function updateSettingsUI(){
     }
 
     adminPanel.innerHTML = html;
+
+    adminPanel.querySelectorAll("[data-userid]").forEach(el=>{
+      el.addEventListener("click", async ()=>{
+        const userId = el.getAttribute("data-userid");
+        const target = users.find(x=>x.id === userId);
+
+        if(!target) return;
+
+        const makeAdmin = !target.is_admin;
+        if(!confirm(`Zmienić admin dla ${target.nick} na: ${makeAdmin ? "TAK" : "NIE"} ?`)) return;
+
+        const { error } = await supa
+          .from("profiles")
+          .update({ is_admin: makeAdmin })
+          .eq("id", userId);
+
+        if(error){
+          toast("Błąd", "Nie udało się zmienić uprawnień.");
+          console.error(error);
+          return;
+        }
+
+        toast("OK", "Zmieniono uprawnienia.");
+        updateSettingsUI();
+      });
+    });
+
   }else{
     tag.className = "tag blue";
     tag.textContent = "USER";
     adminPanel.innerHTML = `<div class="item small">Tylko admin ma dostęp.</div>`;
   }
+}
+
+/* ===================== ENEMY TOKENS ===================== */
+async function renderEnemyTokens(){
+  const prof = await getMyProfile();
+  const box = document.getElementById("enemyTokenPanel");
+
+  if(!prof){
+    box.innerHTML = `<div class="item small">Zaloguj się.</div>`;
+    return;
+  }
+
+  const { data, error } = await supa
+    .from("enemy_tokens")
+    .select("coords,type,updated_at,added_by")
+    .order("updated_at", { ascending:false })
+    .limit(50);
+
+  if(error){
+    box.innerHTML = `<div class="item small">Błąd pobierania tokenów.</div>`;
+    console.error(error);
+    return;
+  }
+
+  let html = `<div class="item small">Ostatnie tokeny (50):</div>`;
+
+  for(const t of data){
+    html += `
+      <div class="item">
+        <div class="inline">
+          <div>
+            <div class="mono"><b>${escapeHtml(t.coords)}</b></div>
+            <div class="small">Typ: <b>${escapeHtml(t.type||"UNKNOWN")}</b> • Dodał: <b>${escapeHtml(t.added_by||"?")}</b></div>
+          </div>
+          <span class="tag blue">${new Date(t.updated_at).toLocaleString()}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  if(prof.is_admin){
+    html += `
+      <div class="divider"></div>
+      <div class="item small"><b>Dodaj tokeny (ADMIN)</b></div>
+      <div class="item">
+        <textarea id="tokenInput" placeholder="Wklej tokeny HN1/HN2 tutaj..." style="min-height:120px;"></textarea>
+        <div class="row">
+          <button id="btnUploadTokens" class="btn2">➕ Dodaj tokeny</button>
+        </div>
+      </div>
+    `;
+  }
+
+  box.innerHTML = html;
+
+  if(prof.is_admin){
+    document.getElementById("btnUploadTokens").addEventListener("click", uploadTokens);
+  }
+}
+
+/* ===================== TOKEN UPLOAD (ADMIN) ===================== */
+function extractTokens(text){
+  const re = /HN[12]:[A-Za-z0-9+\/=\-$]+/g;
+  return text.match(re) || [];
+}
+
+async function uploadTokens(){
+  const prof = await getMyProfile();
+  if(!prof || !prof.is_admin){
+    toast("Brak dostępu", "Tylko admin.");
+    return;
+  }
+
+  const text = document.getElementById("tokenInput").value;
+  const tokens = extractTokens(text);
+
+  if(tokens.length === 0){
+    toast("Tokeny", "Nie wykryto tokenów.");
+    return;
+  }
+
+  const rows = tokens.map(tok => ({
+    token: tok,
+    added_by: prof.nick,
+    updated_at: new Date().toISOString()
+  }));
+
+  const { error } = await supa
+    .from("enemy_tokens")
+    .insert(rows);
+
+  if(error){
+    toast("Błąd", "Nie udało się zapisać tokenów.");
+    console.error(error);
+    return;
+  }
+
+  toast("OK", `Dodano tokenów: ${tokens.length}`);
+  renderEnemyTokens();
 }
 
 /* ===================== EVENTS ===================== */
