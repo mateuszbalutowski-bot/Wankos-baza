@@ -1759,7 +1759,9 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
     return;
   }
 
+  // przypisanie owner + zapis defenderów jako moje wioski
   const myVillages = new Set(await loadMyVillages());
+
   for(const a of parsed){
     a.owner = user.nick;
     a.ownerAddedAt = nowISO();
@@ -1768,18 +1770,19 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
 
   await saveMyVillages([...myVillages]);
 
+  // zapis globalny bez duplikatów
   const old = await loadGlobalLabels();
   const combined = old.concat(parsed);
 
   const uniqueMap = {};
   for(const a of combined){
-    const key = `${a.defender}|${a.source}|${a.arrival}|${a.raw}|${a.owner || "UNKNOWN"}`;
+    const key = `${a.owner}|${a.defender}|${a.source}|${a.arrival}|${a.raw}`;
     uniqueMap[key] = a;
   }
 
-  const finalList = Object.values(uniqueMap);
-  await saveGlobalLabels(finalList);
+  await saveGlobalLabels(Object.values(uniqueMap));
 
+  // podsumowanie tylko nowych
   const summary = document.getElementById("labelsSummary");
   const byDef = groupBy(parsed, a=>a.defender);
 
