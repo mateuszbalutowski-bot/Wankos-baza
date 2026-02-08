@@ -1361,6 +1361,8 @@ async function renderEnemyProfile(coords){
     });
   }
 }
+let TOP_SOURCES_LIMIT = 30;
+
 async function renderTopEnemySources(){
   const box = document.getElementById("enemyTopSources");
 
@@ -1380,20 +1382,33 @@ async function renderTopEnemySources(){
     const list = Object.keys(bySource).map(src => {
       const attacks = bySource[src];
 
-      const onMe = attacks.filter(a => myVillages.includes(a.defender)).length;
+      const myAttacks = attacks.filter(a => myVillages.includes(a.defender));
+      const onMe = myAttacks.length;
+
+      // policz na jakie moje wioski to idzie
+      const byDef = groupBy(myAttacks.filter(a=>a.defender), a=>a.defender);
+
+      const defendersList = Object.keys(byDef).map(def => ({
+        defender: def,
+        count: byDef[def].length
+      })).sort((a,b)=> b.count - a.count);
 
       return {
         source: src,
         count: attacks.length,
-        onMe: onMe
+        onMe: onMe,
+        defenders: defendersList
       };
     });
 
     list.sort((a,b)=> b.count - a.count);
 
+    const visible = list.slice(0, TOP_SOURCES_LIMIT);
+
     let html = "";
-    for(const item of list.slice(0, 50)){
+    for(const item of visible){
       const tagColor = item.onMe > 0 ? "red" : "blue";
+
       const onMeText = item.onMe > 0
         ? `<div class="small" style="margin-top:4px;opacity:.9;">⚠️ Na Ciebie: <b class="mono">${item.onMe}</b></div>`
         : `<div class="small" style="margin-top:4px;opacity:.6;">Brak ataków na Ciebie</div>`;
@@ -1407,25 +1422,97 @@ async function renderTopEnemySources(){
             </div>
             <span class="tag ${tagColor}">${item.count} ataków</span>
           </div>
+
+          <div class="collapse" id="srcCollapse-${item.source.replace("|","_")}" style="display:none;"></div>
+        </div>
+      `;
+    }
+
+    // przycisk "załaduj więcej"
+    if(TOP_SOURCES_LIMIT < list.length){
+      html += `
+        <div class="item" style="text-align:center;">
+          <button id="btnLoadMoreSources" class="btn2">➕ Załaduj więcej</button>
+          <div class="small" style="margin-top:8px;opacity:.75;">
+            Pokazano: <b class="mono">${TOP_SOURCES_LIMIT}</b> / <b class="mono">${list.length}</b>
+          </div>
+        </div>
+      `;
+    }else{
+      html += `
+        <div class="item small" style="text-align:center;opacity:.7;">
+          Pokazano wszystkie źródła: <b class="mono">${list.length}</b>
         </div>
       `;
     }
 
     box.innerHTML = html;
 
+    // obsługa kliknięć
     box.querySelectorAll("[data-src]").forEach(el=>{
-      el.addEventListener("click", ()=>{
+      el.addEventListener("click", async ()=>{
         const coords = el.getAttribute("data-src");
-        renderEnemyProfile(coords);
+
+        // klik w wioskę = pokaż profil wioski
+        await renderEnemyProfile(coords);
+
+        // rozwijanie listy "na jakie moje wioski idzie"
+        const collapse = el.querySelector(".collapse");
+        if(!collapse) return;
+
+        if(collapse.style.display === "block"){
+          collapse.style.display = "none";
+          collapse.innerHTML = "";
+          return;
+        }
+
+        const found = list.find(x => x.source === coords);
+        if(!found) return;
+
+        if(found.onMe === 0){
+          collapse.innerHTML = `<div class="small" style="padding:10px;opacity:.75;">Brak ataków na Twoje wioski.</div>`;
+          collapse.style.display = "block";
+          return;
+        }
+
+        let inside = `
+          <div style="padding:10px;border-bottom:1px solid var(--border);">
+            <div class="small" style="opacity:.9;">
+              🎯 Ataki z <b class="mono">${coords}</b> na Twoje wioski:
+            </div>
+          </div>
+        `;
+
+        for(const d of found.defenders){
+          inside += `
+            <div class="item" style="border-bottom:1px solid var(--border);">
+              <div class="inline">
+                <div class="mono"><b>${d.defender}</b></div>
+                <span class="tag yellow">${d.count} ataków</span>
+              </div>
+            </div>
+          `;
+        }
+
+        collapse.innerHTML = inside;
+        collapse.style.display = "block";
       });
     });
+
+    // load more
+    const btn = document.getElementById("btnLoadMoreSources");
+    if(btn){
+      btn.addEventListener("click", ()=>{
+        TOP_SOURCES_LIMIT += 30;
+        renderTopEnemySources();
+      });
+    }
 
   }catch(e){
     console.error(e);
     box.innerHTML = `<div class="item small">Błąd ładowania rankingu.</div>`;
   }
 }
-
 async function renderThreatBoard(){
   const db = await loadDB();
   const allAttacks = await loadGlobalLabels();
