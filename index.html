@@ -330,7 +330,7 @@
     <div>
       <h1>Tribal Intel Panel</h1>
       <div class="subtitle">
-        Panel plemienny do notatek tokenów, analizy etykiet i rozpoznania wiosek OFF/DEFF.
+        Baza plemienna do notatek i analizy etykiet
         <br>
         <span id="userInfo" class="small"></span>
       </div>
@@ -388,12 +388,12 @@
     <div class="tabPanel" id="tab-labels">
       <div class="card">
         <h2>
-          🏷️ Etykiety Ataków (wklej dane z gry)
+          🏷️ Etykiety Ataków
           <span class="tag blue">GLOBAL DB</span>
         </h2>
 
         <div class="hint">
-          Wklej etykiety. System zapisze je do globalnej bazy plemienia i automatycznie przypisze Twoje wioski (defender).
+          Wklej wszystkie etykiety z "Poproś o pomoc". System zapisze je do globalnej bazy plemienia i automatycznie przypisze Twoje wioski do analizy ataków.
         </div>
 
         <textarea id="labelsInput" placeholder="Wklej etykiety ataków tutaj..."></textarea>
@@ -416,16 +416,16 @@
     <div class="tabPanel" id="tab-analysis" style="display:none;">
       <div class="card">
         <h2>
-          📊 Analiza Etykiet (Twoje wioski)
+          📊 Analiza Etykiet
           <span class="tag yellow">Threat Engine</span>
         </h2>
 
         <div class="hint">
-          Widzisz tylko swoje cele (defender), ale statystyki powtarzalności i fejkmatów są liczone globalnie.
+          Widzisz tylko swoje wioski i etykiety, ale statystyki powtarzalności ataków są liczone globalnie.
         </div>
 
         <div class="row">
-          <button id="btnRunThreat" class="btn2">⚡ Przelicz zagrożenia</button>
+          <button id="btnRunThreat" class="btn2">⚡ Przelicz ataki</button>
           <button id="btnClearThreat" class="btnGhost">🧹 Wyczyść analizę</button>
         </div>
 
@@ -444,14 +444,14 @@
         </h2>
 
         <div class="hint">
-          Lista wiosek z tokenów. Kliknij aby zobaczyć profil.
+          Lista wiosek z notatek. Kliknij aby zobaczyć informacje o wiosce.
         </div>
 
         <div class="legend">
           <span class="tag red">OFF - możliwy FULL</span>
           <span class="tag yellow">OFF/MIX - podejrzana</span>
           <span class="tag green">DEFF / FEJK</span>
-          <span class="tag blue">UNKNOWN</span>
+          <span class="tag blue">Niezidentyfikowany</span>
         </div>
 
         <div class="row">
