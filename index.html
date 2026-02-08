@@ -1772,16 +1772,17 @@ async function switchTab(name){
   document.getElementById("tab-"+name).style.display="block";
 
   if(name === "enemydb"){
-  await renderEnemyDB();
-  await renderTopEnemySources();
-}
+    await renderEnemyDB();
+    await renderTopEnemySources();
+  }
 
-if(name === "analysis") await renderThreatBoard();
-if(name === "notes") await renderTokenStats();
+  if(name === "analysis") await renderThreatBoard();
+  if(name === "notes") await renderTokenStats();
 
-if(name === "settings"){
-  await updateUserUI();
-  if(await isAdmin()) await renderAdminStats();
+  if(name === "settings"){
+    await updateUserUI();
+    if(await isAdmin()) await renderAdminStats();
+  }
 }
 
 /* ===================== EVENTS ===================== */
