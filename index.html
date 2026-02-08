@@ -1678,7 +1678,7 @@ async function switchTab(name){
 
 /* ===================== EVENTS ===================== */
 document.querySelectorAll(".tab").forEach(tab=>{
-  tab.addEventListener("click", ()=> switchTab(tab.getAttribute("data-tab")));
+  tab.addEventListener("click", async ()=> await switchTab(tab.getAttribute("data-tab")));
 });
 
 /* ===== AUTH EVENTS ===== */
