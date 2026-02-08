@@ -467,7 +467,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 
 <script>
 /* ===================== SUPABASE CONFIG ===================== */
@@ -925,20 +925,13 @@ function decodeHN(token){
     const parts = token.split(":");
     if(parts.length < 2) return null;
 
-    const b64 = parts[1];
+    const payload = parts[1].trim();
 
-    // base64 -> bytes
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++){
-      bytes[i] = binary.charCodeAt(i);
-    }
+    const jsonText = LZString.decompressFromBase64(payload);
+    if(!jsonText) return null;
 
-    // deflate -> string
-    const inflated = window.pako.inflate(bytes, { to: "string" });
+    return JSON.parse(jsonText);
 
-    // json parse
-    return JSON.parse(inflated);
   }catch(e){
     console.error("decodeHN error:", e);
     return null;
