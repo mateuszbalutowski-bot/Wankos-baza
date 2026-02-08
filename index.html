@@ -412,6 +412,9 @@
         <div class="divider"></div>
 
         <h2>📌 Podsumowanie</h2>
+<div class="small" style="margin-top:10px;opacity:.8;">
+  Etykiet w bazie plemienia: <b class="mono" id="tribeLabelsCount">...</b>
+</div>
         <div id="labelsSummary" class="listBox">
           <div class="item small">Brak danych.</div>
         </div>
@@ -841,6 +844,21 @@ async function saveMyVillages(list){
   const key = myVillagesKey();
   if(!key) return;
   localStorage.setItem(key, JSON.stringify(list));
+}
+async function updateTribeLabelsCount(){
+  try{
+    const { count, error } = await supa
+      .from("attack_labels")
+      .select("*", { count: "exact", head: true });
+
+    if(error) throw error;
+
+    document.getElementById("tribeLabelsCount").textContent = count ?? 0;
+
+  }catch(e){
+    console.error(e);
+    document.getElementById("tribeLabelsCount").textContent = "Błąd";
+  }
 }
 
 /* ===================== STORAGE DB ===================== */
@@ -1817,7 +1835,7 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
     showLabelsLoader("Wysyłanie do Supabase...", 80);
 
     await saveGlobalLabels(Object.values(uniqueMap));
-
+await updateTribeLabelsCount();
     showLabelsLoader("Generowanie podsumowania...", 95);
 
     // podsumowanie tylko nowych
@@ -2087,6 +2105,7 @@ async function init(){
 }
 
 init();
+updateTribeLabelsCount();
 </script>
 
 </body>
