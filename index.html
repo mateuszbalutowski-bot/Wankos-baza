@@ -402,6 +402,12 @@
           <button id="btnParseLabels" class="btn2">📥 Wczytaj etykiety</button>
           <button id="btnClearLabels" class="btnGhost">🧹 Wyczyść</button>
         </div>
+<div id="labelsLoader" class="hidden" style="margin-top:12px;">
+  <div class="small" id="labelsLoaderText">Ładowanie...</div>
+  <div style="height:10px;border-radius:999px;border:1px solid var(--border);background:rgba(2,6,23,0.4);overflow:hidden;margin-top:8px;">
+    <div id="labelsLoaderBar" style="height:100%;width:0%;background:linear-gradient(90deg, rgba(96,165,250,1), rgba(52,211,153,1));transition:width .2s;"></div>
+  </div>
+</div>
 
         <div class="divider"></div>
 
@@ -670,6 +676,22 @@ function prettyHours(hours){
 
 function normalizeNick(nick){
   return String(nick || "").trim();
+}
+function showLabelsLoader(text="Ładowanie...", pct=0){
+  const box = document.getElementById("labelsLoader");
+  const bar = document.getElementById("labelsLoaderBar");
+  const t = document.getElementById("labelsLoaderText");
+
+  box.classList.remove("hidden");
+  t.textContent = text;
+  bar.style.width = `${pct}%`;
+}
+
+function hideLabelsLoader(){
+  const box = document.getElementById("labelsLoader");
+  const bar = document.getElementById("labelsLoaderBar");
+  box.classList.add("hidden");
+  bar.style.width = "0%";
 }
 
 /* ===================== AUTH STORAGE (SUPABASE + FALLBACK LOCAL) ===================== */
@@ -1751,56 +1773,87 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
     return;
   }
 
-  const text = document.getElementById("labelsInput").value;
-  const parsed = parseEnemyLabels(text);
+  const btn = document.getElementById("btnParseLabels");
 
-  if(parsed.length === 0){
-    toast("Etykiety", "Nie wykryto ataków.");
-    return;
-  }
+  try{
+    btn.disabled = true;
+    showLabelsLoader("Parsowanie etykiet...", 10);
 
-  // przypisanie owner + zapis defenderów jako moje wioski
-  const myVillages = new Set(await loadMyVillages());
+    const text = document.getElementById("labelsInput").value;
+    const parsed = parseEnemyLabels(text);
 
-  for(const a of parsed){
-    a.owner = user.nick;
-    a.ownerAddedAt = nowISO();
-    if(a.defender) myVillages.add(a.defender);
-  }
+    if(parsed.length === 0){
+      hideLabelsLoader();
+      btn.disabled = false;
+      toast("Etykiety", "Nie wykryto ataków.");
+      return;
+    }
 
-  await saveMyVillages([...myVillages]);
+    showLabelsLoader("Zapisywanie defenderów...", 30);
 
-  // zapis globalny bez duplikatów
-  const old = await loadGlobalLabels();
-  const combined = old.concat(parsed);
+    // przypisanie owner + zapis defenderów jako moje wioski
+    const myVillages = new Set(await loadMyVillages());
 
-  const uniqueMap = {};
-  for(const a of combined){
-    const key = `${a.owner}|${a.defender}|${a.source}|${a.arrival}|${a.raw}`;
-    uniqueMap[key] = a;
-  }
+    for(const a of parsed){
+      a.owner = user.nick;
+      a.ownerAddedAt = nowISO();
+      if(a.defender) myVillages.add(a.defender);
+    }
 
-  await saveGlobalLabels(Object.values(uniqueMap));
+    await saveMyVillages([...myVillages]);
 
-  // podsumowanie tylko nowych
-  const summary = document.getElementById("labelsSummary");
-  const byDef = groupBy(parsed, a=>a.defender);
+    showLabelsLoader("Pobieranie globalnej bazy...", 55);
 
-  let html = "";
-  for(const def in byDef){
-    html += `<div class="item">
-      <div class="inline">
-        <div>
-          <div class="mono"><b>${escapeHtml(def)}</b></div>
-          <div class="small">Nowych ataków: <b class="mono">${byDef[def].length}</b></div>
+    // zapis globalny bez duplikatów
+    const old = await loadGlobalLabels();
+    const combined = old.concat(parsed);
+
+    const uniqueMap = {};
+    for(const a of combined){
+      const key = `${a.owner}|${a.defender}|${a.source}|${a.arrival}|${a.raw}`;
+      uniqueMap[key] = a;
+    }
+
+    showLabelsLoader("Wysyłanie do Supabase...", 80);
+
+    await saveGlobalLabels(Object.values(uniqueMap));
+
+    showLabelsLoader("Generowanie podsumowania...", 95);
+
+    // podsumowanie tylko nowych
+    const summary = document.getElementById("labelsSummary");
+    const byDef = groupBy(parsed, a=>a.defender);
+
+    let html = "";
+    for(const def in byDef){
+      html += `<div class="item">
+        <div class="inline">
+          <div>
+            <div class="mono"><b>${escapeHtml(def)}</b></div>
+            <div class="small">Nowych ataków: <b class="mono">${byDef[def].length}</b></div>
+          </div>
+          <span class="tag blue">OK</span>
         </div>
-        <span class="tag blue">OK</span>
-      </div>
-    </div>`;
-  }
+      </div>`;
+    }
 
-  summary.innerHTML = html;
-  toast("Etykiety", `Dodano ataków: ${parsed.length}`);
+    summary.innerHTML = html;
+
+    showLabelsLoader("Gotowe!", 100);
+
+    setTimeout(()=>{
+      hideLabelsLoader();
+    }, 600);
+
+    toast("Etykiety", `Dodano ataków: ${parsed.length}`);
+
+  }catch(e){
+    console.error(e);
+    hideLabelsLoader();
+    toast("Błąd", "Nie udało się zapisać etykiet.");
+  }finally{
+    btn.disabled = false;
+  }
 });
 
 document.getElementById("btnClearLabels").addEventListener("click", ()=>{
