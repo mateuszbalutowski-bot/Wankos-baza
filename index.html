@@ -1701,6 +1701,7 @@ document.getElementById("btnRegister").addEventListener("click", async ()=>{
   }
 
   const users = await loadUsers();
+
   if(users[nick]){
     toast("Błąd", "Taki nick już istnieje.");
     return;
@@ -1709,10 +1710,12 @@ document.getElementById("btnRegister").addEventListener("click", async ()=>{
   users[nick] = {
     nick,
     pass,
-    createdAt: nowISO()
+    createdAt: nowISO(),
+    is_admin: false
   };
 
   await saveUsers(users);
+
   toast("OK", "Konto utworzone. Możesz się zalogować.");
 });
 
