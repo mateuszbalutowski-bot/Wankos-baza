@@ -1361,7 +1361,7 @@ async function renderEnemyProfile(coords){
     });
   }
 }
-let TOP_SOURCES_LIMIT = 30;
+let TOP_SOURCES_LIMIT = 15;
 
 async function renderTopEnemySources(){
   const box = document.getElementById("enemyTopSources");
@@ -1382,22 +1382,42 @@ async function renderTopEnemySources(){
     const list = Object.keys(bySource).map(src => {
       const attacks = bySource[src];
 
+      // najczęstszy gracz z tej wioski
+      const byPlayer = groupBy(attacks.filter(a=>a.player), a=>a.player);
+      let topPlayer = "UNKNOWN";
+      let topPlayerCount = 0;
+
+      for(const p in byPlayer){
+        if(byPlayer[p].length > topPlayerCount){
+          topPlayerCount = byPlayer[p].length;
+          topPlayer = p;
+        }
+      }
+
       const myAttacks = attacks.filter(a => myVillages.includes(a.defender));
       const onMe = myAttacks.length;
 
-      // policz na jakie moje wioski to idzie
+      // grupowanie po defender (Twoje wioski)
       const byDef = groupBy(myAttacks.filter(a=>a.defender), a=>a.defender);
 
       const defendersList = Object.keys(byDef).map(def => ({
         defender: def,
-        count: byDef[def].length
+        count: byDef[def].length,
+        attacks: byDef[def].sort((a,b)=>{
+          // sortuj po arrival jeśli jest
+          if(!a.arrival) return 1;
+          if(!b.arrival) return -1;
+          return String(a.arrival).localeCompare(String(b.arrival));
+        })
       })).sort((a,b)=> b.count - a.count);
 
       return {
         source: src,
         count: attacks.length,
         onMe: onMe,
-        defenders: defendersList
+        defenders: defendersList,
+        topPlayer: topPlayer,
+        topPlayerCount: topPlayerCount
       };
     });
 
@@ -1413,17 +1433,24 @@ async function renderTopEnemySources(){
         ? `<div class="small" style="margin-top:4px;opacity:.9;">⚠️ Na Ciebie: <b class="mono">${item.onMe}</b></div>`
         : `<div class="small" style="margin-top:4px;opacity:.6;">Brak ataków na Ciebie</div>`;
 
+      const playerHtml = item.topPlayer && item.topPlayer !== "UNKNOWN"
+        ? `<div class="small" style="margin-top:4px;opacity:.85;">
+            👤 Najczęściej: <b class="clickPlayer" data-player="${escapeHtml(item.topPlayer)}">${escapeHtml(item.topPlayer)}</b>
+          </div>`
+        : `<div class="small" style="margin-top:4px;opacity:.6;">👤 Brak danych gracza</div>`;
+
       html += `
         <div class="item" data-src="${item.source}">
           <div class="inline">
             <div>
               <div class="mono"><b>${item.source}</b></div>
+              ${playerHtml}
               ${onMeText}
             </div>
             <span class="tag ${tagColor}">${item.count} ataków</span>
           </div>
 
-          <div class="collapse" id="srcCollapse-${item.source.replace("|","_")}" style="display:none;"></div>
+          <div class="collapse" style="display:none;"></div>
         </div>
       `;
     }
@@ -1448,15 +1475,55 @@ async function renderTopEnemySources(){
 
     box.innerHTML = html;
 
-    // obsługa kliknięć
+    // klik w player (jak w analizie)
+    box.querySelectorAll(".clickPlayer").forEach(el=>{
+      el.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+
+        const player = el.getAttribute("data-player");
+
+        const playerAttacks = all.filter(a => (a.player || "UNKNOWN") === player);
+        const byVillage = groupBy(playerAttacks.filter(a=>a.source), a=>a.source);
+
+        let html = `
+          <div style="padding:10px;border-bottom:1px solid var(--border);">
+            <div class="mono" style="font-weight:900;">Gracz: ${escapeHtml(player)}</div>
+            <div class="small">Łącznie ataków (globalnie): <b class="mono">${playerAttacks.length}</b></div>
+            <div class="small" style="margin-top:4px;opacity:.8;">Kliknij wioskę aby przejść do profilu.</div>
+          </div>
+        `;
+
+        const villages = Object.keys(byVillage).sort((a,b)=> byVillage[b].length - byVillage[a].length);
+
+        for(const v of villages.slice(0, 60)){
+          html += `
+            <div class="item" style="border-bottom:1px solid var(--border);" data-src="${v}">
+              <div class="inline">
+                <div class="mono"><b>${v}</b></div>
+                <span class="tag blue">${byVillage[v].length} ataków</span>
+              </div>
+            </div>
+          `;
+        }
+
+        box.innerHTML = html;
+
+        box.querySelectorAll("[data-src]").forEach(srcEl=>{
+          srcEl.addEventListener("click", async ()=>{
+            const coords = srcEl.getAttribute("data-src");
+            await renderEnemyProfile(coords);
+          });
+        });
+      });
+    });
+
+    // klik w źródło (wioskę)
     box.querySelectorAll("[data-src]").forEach(el=>{
       el.addEventListener("click", async ()=>{
         const coords = el.getAttribute("data-src");
 
-        // klik w wioskę = pokaż profil wioski
         await renderEnemyProfile(coords);
 
-        // rozwijanie listy "na jakie moje wioski idzie"
         const collapse = el.querySelector(".collapse");
         if(!collapse) return;
 
@@ -1485,13 +1552,31 @@ async function renderTopEnemySources(){
 
         for(const d of found.defenders){
           inside += `
-            <div class="item" style="border-bottom:1px solid var(--border);">
+            <div style="padding:10px;border-bottom:1px solid var(--border);">
               <div class="inline">
                 <div class="mono"><b>${d.defender}</b></div>
                 <span class="tag yellow">${d.count} ataków</span>
               </div>
-            </div>
-          `;
+        `;
+
+          // szczegóły ataków
+          for(const a of d.attacks.slice(0, 8)){
+            inside += `
+              <div class="small" style="margin-top:6px;opacity:.85;">
+                ⏱ ${escapeHtml(a.arrival || "??")} • 👤 <b>${escapeHtml(a.player || "UNKNOWN")}</b>
+              </div>
+            `;
+          }
+
+          if(d.attacks.length > 8){
+            inside += `
+              <div class="small" style="margin-top:6px;opacity:.65;">
+                +${d.attacks.length - 8} kolejnych ataków...
+              </div>
+            `;
+          }
+
+          inside += `</div>`;
         }
 
         collapse.innerHTML = inside;
