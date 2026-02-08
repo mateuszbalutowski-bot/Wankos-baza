@@ -312,7 +312,7 @@
   </div>
 </header>
 
-<main>
+<main id="appMain" style="display:none;">
   <div class="wrap">
 
     <!-- LOGIN TAB -->
@@ -487,14 +487,28 @@ function escapeHtml(s){
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[m]));
 }
-function groupBy(arr, keyFn){
-  const m = {};
-  for(const item of arr){
-    const k = keyFn(item);
-    if(!m[k]) m[k] = [];
-    m[k].push(item);
-  }
-  return m;
+/* ===================== UI LOCK ===================== */
+function lockUI(){
+  document.getElementById("appMain").style.display = "block";
+
+  document.querySelectorAll(".tab").forEach(t=>{
+    const name = t.getAttribute("data-tab");
+    if(name === "login"){
+      t.style.display = "inline-flex";
+    }else{
+      t.style.display = "none";
+    }
+  });
+
+  switchTab("login");
+}
+
+function unlockUI(){
+  document.getElementById("appMain").style.display = "block";
+
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.style.display = "inline-flex";
+  });
 }
 
 /* ===================== TABS ===================== */
@@ -579,6 +593,21 @@ async function registerUser(){
     email: fakeEmail,
     password: pass
   });
+if(data?.user){
+  const { error: profErr } = await supa
+    .from("profiles")
+    .insert([{
+      id: data.user.id,
+      nick: nick,
+      is_admin: false
+    }]);
+
+  if(profErr){
+    console.error(profErr);
+    toast("Błąd", "Konto utworzone, ale nie zapisano profilu w bazie.");
+    return;
+  }
+}
 
   if(error){
     toast("Błąd", "Nie udało się założyć konta (może istnieje).");
@@ -611,10 +640,30 @@ async function loginUser(){
     return;
   }
 
-  toast("Zalogowano", `Witaj ${nick}!`);
-  await updateLoginUI();
-  await updateSettingsUI();
-  switchTab("labels");
+  const { data: sessionData } = await supa.auth.getSession();
+const session = sessionData?.session;
+
+if(session){
+  const { data: existingProfile } = await supa
+    .from("profiles")
+    .select("*")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  if(!existingProfile){
+    await supa.from("profiles").insert([{
+      id: session.user.id,
+      nick: nick,
+      is_admin: false
+    }]);
+  }
+}
+
+toast("Zalogowano", `Witaj ${nick}!`);
+await updateLoginUI();
+await updateSettingsUI();
+unlockUI();
+switchTab("labels");
 }
 
 async function logoutUser(){
@@ -622,7 +671,7 @@ async function logoutUser(){
   toast("Wylogowano", "Sesja usunięta.");
   await updateLoginUI();
   await updateSettingsUI();
-  switchTab("login");
+  lockUI();
 }
 
 /* ===================== PARSER LABELS ===================== */
@@ -1050,8 +1099,19 @@ document.getElementById("btnUploadTokens").addEventListener("click", uploadToken
 
 /* ===================== INIT ===================== */
 (async ()=>{
+  const { data: sessionData } = await supa.auth.getSession();
+  const session = sessionData?.session;
+
+  if(!session){
+    await updateLoginUI();
+    lockUI();
+    return;
+  }
+
   await updateLoginUI();
   await updateSettingsUI();
+  unlockUI();
+  switchTab("labels");
 })();
 </script>
 
