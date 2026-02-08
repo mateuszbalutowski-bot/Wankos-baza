@@ -573,7 +573,7 @@ async function registerUser(){
   }
 
   // hack: Supabase Auth wymaga emaila, więc robimy sztuczny email z nicku
-  const fakeEmail = nick.toLowerCase() + "@wankos.local";
+  const fakeEmail = nick.toLowerCase() + "@wankosintel.com";
 
   const { data, error } = await supa.auth.signUp({
     email: fakeEmail,
@@ -598,7 +598,7 @@ async function loginUser(){
     return;
   }
 
-  const fakeEmail = nick.toLowerCase() + "@wankos.local";
+  const fakeEmail = nick.toLowerCase() + "@wankosintel.com";
 
   const { error } = await supa.auth.signInWithPassword({
     email: fakeEmail,
