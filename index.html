@@ -1352,6 +1352,70 @@ async function renderEnemyProfile(coords){
     });
   }
 }
+async function renderTopEnemySources(){
+  const box = document.getElementById("enemyTopSources");
+
+  try{
+    const all = await loadGlobalLabels();
+    const myVillages = await loadMyVillages();
+
+    const onlySources = all.filter(a => a.source && a.source.includes("|"));
+
+    if(onlySources.length === 0){
+      box.innerHTML = `<div class="item small">Brak danych w bazie etykiet.</div>`;
+      return;
+    }
+
+    const bySource = groupBy(onlySources, a=>a.source);
+
+    const list = Object.keys(bySource).map(src => {
+      const attacks = bySource[src];
+
+      const onMe = attacks.filter(a => myVillages.includes(a.defender)).length;
+
+      return {
+        source: src,
+        count: attacks.length,
+        onMe: onMe
+      };
+    });
+
+    list.sort((a,b)=> b.count - a.count);
+
+    let html = "";
+    for(const item of list.slice(0, 50)){
+      const tagColor = item.onMe > 0 ? "red" : "blue";
+      const onMeText = item.onMe > 0
+        ? `<div class="small" style="margin-top:4px;opacity:.9;">⚠️ Na Ciebie: <b class="mono">${item.onMe}</b></div>`
+        : `<div class="small" style="margin-top:4px;opacity:.6;">Brak ataków na Ciebie</div>`;
+
+      html += `
+        <div class="item" data-src="${item.source}">
+          <div class="inline">
+            <div>
+              <div class="mono"><b>${item.source}</b></div>
+              ${onMeText}
+            </div>
+            <span class="tag ${tagColor}">${item.count} ataków</span>
+          </div>
+        </div>
+      `;
+    }
+
+    box.innerHTML = html;
+
+    box.querySelectorAll("[data-src]").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        const coords = el.getAttribute("data-src");
+        renderEnemyProfile(coords);
+      });
+    });
+
+  }catch(e){
+    console.error(e);
+    box.innerHTML = `<div class="item small">Błąd ładowania rankingu.</div>`;
+  }
+}
 
 async function renderThreatBoard(){
   const db = await loadDB();
