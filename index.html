@@ -703,11 +703,18 @@ async function saveUsers(users){
   for(const nick in users){
     const u = users[nick];
 
-    await supa.from("profiles").upsert([{
+    const { data, error } = await supa.from("profiles").upsert([{
       nick: u.nick,
       pass: u.pass,
       is_admin: u.is_admin || false
     }], { onConflict: "nick" });
+
+    if(error){
+      console.error("SUPABASE UPSERT ERROR:", error);
+      toast("SUPABASE ERROR", error.message);
+    }else{
+      console.log("SUPABASE OK:", data);
+    }
   }
 }
 
