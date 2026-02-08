@@ -467,6 +467,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
 
 <script>
 /* ===================== SUPABASE CONFIG ===================== */
@@ -918,6 +919,37 @@ async function updateAdminTokenPanel(){
     panel.style.display = "none";
   }
 }
+/* ===================== TOKEN DECODER ===================== */
+function decodeHN(token){
+  try{
+    const parts = token.split(":");
+    if(parts.length < 2) return null;
+
+    const b64 = parts[1];
+
+    // base64 -> bytes
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++){
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    // deflate -> string
+    const inflated = window.pako.inflate(bytes, { to: "string" });
+
+    // json parse
+    return JSON.parse(inflated);
+  }catch(e){
+    console.error("decodeHN error:", e);
+    return null;
+  }
+}
+
+function findCoordsInObject(obj){
+  const str = JSON.stringify(obj);
+  const match = str.match(/(\d{1,3}\|\d{1,3})/);
+  return match ? match[1] : null;
+}
 
 /* ===================== TOKENS UPLOAD (ADMIN) ===================== */
 function extractTokens(text){
@@ -940,17 +972,25 @@ async function uploadTokens(){
     return;
   }
 
-  // placeholder: zapisujemy tylko token tekstowy, coords trzeba dodać parser jak w starej wersji
-  // tutaj wstawiamy "UNKNOWN|UNKNOWN" bo parser tokenów jest długi
-  // Jak chcesz, w kolejnym kroku podłączymy Twój stary decodeHN i troops parser.
+  const rows = [];
 
-  const rows = tokens.map(t => ({
-    coords: "???|???",
-    token: t,
-    type: "UNKNOWN",
-    troops: {},
-    added_by: prof.nick
-  }));
+  for(const t of tokens){
+    const decoded = decodeHN(t);
+    if(!decoded) continue;
+
+    rows.push({
+      coords: findCoordsInObject(decoded) || "???|???",
+      token: t,
+      type: "UNKNOWN",
+      troops: decoded,
+      added_by: prof.nick
+    });
+  }
+
+  if(rows.length === 0){
+    toast("Błąd", "Nie udało się zdekodować tokenów.");
+    return;
+  }
 
   const { error } = await supa.from("enemy_tokens").insert(rows);
 
@@ -960,7 +1000,7 @@ async function uploadTokens(){
     return;
   }
 
-  toast("OK", `Dodano tokenów: ${tokens.length}`);
+  toast("OK", `Dodano tokenów: ${rows.length}`);
   document.getElementById("tokenInput").value = "";
   renderEnemyDB();
 }
