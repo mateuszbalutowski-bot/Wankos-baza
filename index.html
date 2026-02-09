@@ -921,6 +921,7 @@ async function saveDB(db){
   }
 }
 
+/* ===================== FIXED GLOBAL LABELS ===================== */
 async function loadGlobalLabels(){
   try{
     let all = [];
@@ -931,6 +932,7 @@ async function loadGlobalLabels(){
       const { data, error } = await supa
         .from("attack_labels")
         .select("owner_nick, defender, source, player, arrival, raw, created_at")
+        .order("created_at", { ascending: true })
         .range(from, from + step - 1);
 
       if(error) throw error;
@@ -957,7 +959,6 @@ async function loadGlobalLabels(){
   }catch(e){
     console.error("loadGlobalLabels error:", e);
 
-    // fallback do localStorage, ale tylko jeśli Supabase padł całkowicie
     try{
       const raw = localStorage.getItem(GLOBAL_LABELS_KEY);
       if(!raw) return [];
@@ -969,40 +970,27 @@ async function loadGlobalLabels(){
 }
 
 async function saveGlobalLabels(list){
-  // zapis lokalny (opcjonalny)
   localStorage.setItem(GLOBAL_LABELS_KEY, JSON.stringify(list));
 
   try{
-    // pobierz istniejące rekordy z supabase (pełna paginacja)
-    const existing = await loadGlobalLabels();
+    // Zamiast pobierać całą tabelę (co jest ciężkie),
+    // robimy insert "na ślepo" w chunkach.
+    // Duplikaty i tak zostaną ewentualnie zaakceptowane (brak unique constraint),
+    // ale kod działa dużo szybciej.
+    // Jeśli chcesz 100% brak duplikatów -> trzeba zrobić unique index w Supabase.
 
-    const existingKeys = new Set(
-      existing.map(a => `${a.defender}|${a.source}|${a.arrival}|${a.raw}|${a.owner}`)
-    );
+    const toInsert = list.map(a => ({
+      owner_nick: a.owner || "UNKNOWN",
+      defender: a.defender,
+      source: a.source,
+      player: a.player,
+      arrival: a.arrival,
+      raw: a.raw
+    }));
 
-    // filtrujemy nowe
-    const toInsert = [];
-    for(const a of list){
-      const key = `${a.defender}|${a.source}|${a.arrival}|${a.raw}|${a.owner || "UNKNOWN"}`;
-      if(existingKeys.has(key)) continue;
+    if(toInsert.length === 0) return;
 
-      toInsert.push({
-        owner_nick: a.owner || "UNKNOWN",
-        defender: a.defender,
-        source: a.source,
-        player: a.player,
-        arrival: a.arrival,
-        raw: a.raw
-      });
-    }
-
-    if(toInsert.length === 0){
-      console.log("saveGlobalLabels: nothing new to insert");
-      return;
-    }
-
-    // batch insert po 200 (bez limitów)
-    const chunkSize = 200;
+    const chunkSize = 250;
     for(let i=0; i<toInsert.length; i+=chunkSize){
       const chunk = toInsert.slice(i, i+chunkSize);
 
@@ -1977,13 +1965,12 @@ async function renderAdminUserProfile(ownerNick){
   document.getElementById("btnDeleteUserLabels").addEventListener("click", async ()=>{
     if(!confirm(`Usunąć wszystkie etykiety dodane przez ${ownerNick}?`)) return;
 
-    // usuwamy z supabase bez ruszania struktury bazy
     await supa.from("attack_labels").delete().eq("owner_nick", ownerNick);
 
-    // i odświeżamy
     toast("Admin", `Usunięto etykiety użytkownika ${ownerNick}.`);
     await renderAdminStats();
     document.getElementById("adminUserProfile").innerHTML = `<div class="item small">Usunięto dane użytkownika.</div>`;
+    await updateTribeLabelsCount();
   });
 
   document.querySelectorAll("#adminUserProfile [data-src]").forEach(el=>{
@@ -2151,7 +2138,7 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
 
     showLabelsLoader("Pobieranie globalnej bazy...", 55);
 
-    // zapis globalny bez duplikatów
+    // zapis globalny bez duplikatów (lokalnie)
     const old = await loadGlobalLabels();
     const combined = old.concat(parsed);
 
@@ -2163,8 +2150,11 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
 
     showLabelsLoader("Wysyłanie do Supabase...", 80);
 
+    // Zmienione: zapisuje tylko unikalne z combined (jak wcześniej),
+    // ale saveGlobalLabels nie pobiera już całej tabeli supabase.
     await saveGlobalLabels(Object.values(uniqueMap));
-await updateTribeLabelsCount();
+    await updateTribeLabelsCount();
+
     showLabelsLoader("Generowanie podsumowania...", 95);
 
     // podsumowanie tylko nowych
@@ -2226,7 +2216,6 @@ document.getElementById("btnDeleteMyLabels").addEventListener("click", async ()=
 
   toast("OK", "Usunięto Twoje etykiety.");
 
-  // odśwież UI
   await updateTribeLabelsCount();
   await renderThreatBoard();
   await renderTopEnemySources();
@@ -2355,26 +2344,38 @@ document.getElementById("btnRevokeAdmin").addEventListener("click", async ()=>{
   await updateUserUI();
 });
 
+/* ===================== FIXED RESET LABELS ===================== */
 document.getElementById("btnResetLabels").addEventListener("click", async ()=>{
   if(!(await isAdmin())) return;
 
   if(!confirm("Usunąć wszystkie globalne etykiety ataków?")) return;
 
-  const { error } = await supa.from("attack_labels").delete().neq("owner_nick", "__NONE__");
-if(error) toast("Błąd", error.message);
-else toast("Reset", "Usunięto globalne etykiety.");
-await updateTribeLabelsCount();
+  const { error } = await supa
+    .from("attack_labels")
+    .delete()
+    .gt("created_at", "1970-01-01");
+
+  if(error){
+    toast("Błąd", error.message);
+    return;
+  }
 
   toast("Reset", "Usunięto globalne etykiety.");
+  await updateTribeLabelsCount();
+
+  document.getElementById("labelsSummary").innerHTML = `<div class="item small">Brak danych.</div>`;
+  document.getElementById("threatBoard").innerHTML = `<div class="item small">Brak analizy. Wklej etykiety w zakładce "Etykiety Ataków".</div>`;
+  document.getElementById("enemyTopSources").innerHTML = `<div class="item small">Brak danych.</div>`;
 });
 
+/* ===================== FIXED RESET ALL ===================== */
 document.getElementById("btnResetAll").addEventListener("click", async ()=>{
   if(!(await isAdmin())) return;
 
   if(!confirm("Usunąć CAŁĄ bazę (tokeny + etykiety + konta)?")) return;
 
-  await supa.from("enemy_tokens").delete().neq("coords", "__NONE__");
-  await supa.from("attack_labels").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await supa.from("enemy_tokens").delete().gt("updated_at", "1970-01-01");
+  await supa.from("attack_labels").delete().gt("created_at", "1970-01-01");
 
   toast("Reset", "Wyczyszczono wszystko.");
   location.reload();
@@ -2424,6 +2425,7 @@ document.getElementById("btnImport").addEventListener("click", async ()=>{
         if(obj.admins) await saveAdmins(obj.admins);
 
         toast("Import", "Zaimportowano dane.");
+        await updateTribeLabelsCount();
       }catch(e){
         toast("Błąd", "Nie udało się zaimportować.");
       }
