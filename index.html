@@ -627,6 +627,7 @@ var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length
 const TRIBE_CODE = "Wankos2026";
 const DEFAULT_ADMIN = "Jupiter";
 
+const WORLD_URL = "https://pl218.plemiona.pl";
 const UNIT_ORDER = ["spear","sword","axe","spy","light","heavy","ram","catapult","knight","snob"];
 const UNIT_LABELS = { spear:"Pik", sword:"Miecz", axe:"Topór", spy:"Zwiad", light:"LK", heavy:"CK", ram:"Taran", catapult:"Kat", knight:"Rycerz", snob:"Szlach" };
 
@@ -1441,8 +1442,9 @@ if(entry.type === "OFF"){
     <div class="item">
       <div class="inline">
         <div class="mono" style="font-weight:900;font-size:14px;">
-  <a href="/game.php?screen=map&x=${coords.split("|")[0]}&y=${coords.split("|")[1]}" target="_blank"
-     style="color:rgba(96,165,250,0.95);text-decoration:underline;">
+  <a href="${WORLD_URL}/game.php?screen=map&x=${coords.split("|")[0]}&y=${coords.split("|")[1]}"
+     target="_blank"
+     style="color:rgba(96,165,250,0.95);text-decoration:underline;font-weight:900;">
      ${coords}
   </a>
 </div>
