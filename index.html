@@ -908,7 +908,7 @@ async function loadDB(){
   try{
     const { data, error } = await supa
       .from("enemy_tokens")
-      .select("coords, token, type, troops, updated_at, added_by, report_time").select("coords, token, type, troops, updated_at, added_by, report_time")
+      .select("coords, token, type, troops, updated_at, added_by, report_time")
 
     if(error) throw error;
 
@@ -921,7 +921,8 @@ async function loadDB(){
         troops: row.troops || {},
         troopsAfter: row.troops || {},
         updatedAt: row.updated_at,
-        addedBy: row.added_by
+        addedBy: row.added_by,
+reportTime: row.report_time
       };
     }
 
@@ -948,9 +949,9 @@ async function saveDB(db){
   token: v.token,
   type: v.type,
   troops: v.troops,
+  report_time: v.reportTime || nowISO(),
   updated_at: nowISO(),
   added_by: getCurrentUser()?.nick || "UNKNOWN"
-report_time: v.reportTime || nowISO(),
 }], { onConflict: "coords" });
   }
 }
