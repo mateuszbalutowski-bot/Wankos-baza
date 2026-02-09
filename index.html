@@ -658,6 +658,8 @@ const FULL_OFF = {
   axe: 6000,
   light: 2800,
   ram: 400
+const FULL_OFF_POP = 19500;
+
 };
 
 const FULL_THRESHOLDS = {
@@ -1132,12 +1134,14 @@ function predictRebuildMax(troopsAfter, hoursPassed){
 
   return predicted;
 }
-
+function calcOffPop(troops){
+  return (troops.axe || 0) * 1
+       + (troops.light || 0) * 4
+       + (troops.ram || 0) * 5;
+}
 function calcFullOffPercent(troops){
-  const axePct = (troops.axe || 0) / FULL_OFF.axe;
-  const lightPct = (troops.light || 0) / FULL_OFF.light;
-  const ramPct = (troops.ram || 0) / FULL_OFF.ram;
-  return Math.max(0, Math.min(1, Math.min(axePct, lightPct, ramPct)));
+  const pop = calcOffPop(troops);
+  return Math.max(0, Math.min(1, pop / FULL_OFF_POP));
 }
 
 function classifyOffThreatByPercent(percent){
@@ -1152,11 +1156,12 @@ function threatColor(threat){
   return "green";
 }
 function offStrengthLabel(pct){
-  if(pct < OFF_DEAD_THRESHOLD) return "OFF PADŁ (90%+)";
-  if(pct >= 0.80) return "FULL OFF";
-  if(pct >= 0.65) return "3/4 OFF";
-  if(pct >= 0.40) return "1/2 OFF";
-  return "SŁABY OFF";
+  if(pct < 0.10) return "OFF PADŁ (90%+)";
+  if(pct < 0.40) return "SŁABY OFF";
+  if(pct < 0.65) return "1/2 OFF";
+  if(pct < 0.85) return "3/4 OFF";
+  return "FULL OFF";
+}
 }
 
 function isOffFejk(pct){
@@ -1351,14 +1356,14 @@ async function renderEnemyDB(){
 
   if(entry.offKilledAt){
     const offHours = hoursBetween(entry.offKilledAt, Date.now());
-    label = `${strength} • ${Math.round(pct*100)}% FULL • padł ${prettyHours(offHours)} temu`;
+    label = `${strength} • ${Math.round(pct*100)}% OFF • padł ${prettyHours(offHours)} temu`;
   }
   else if(entry.reportTime){
     const repHours = hoursBetween(entry.reportTime, Date.now());
-    label = `${strength} • ${Math.round(pct*100)}% FULL • raport ${prettyHours(repHours)} temu`;
+    label = `${strength} • ${Math.round(pct*100)}% OFF • raport ${prettyHours(repHours)} temu`;
   }
   else{
-    label = `${strength} • ${Math.round(pct*100)}% FULL`;
+    label = `${strength} • ${Math.round(pct*100)}% OFF`;
   }
 
   if(fejk){
@@ -1436,9 +1441,9 @@ if(entry.type === "OFF"){
   const fejk = isOffFejk(pct);
 
   if(fejk){
-    percentInfo = `<div class="small">⚠️ ${strength} • <b class="mono">${Math.round(pct*100)}%</b> FULL → traktowane jako <b>FEJK</b></div>`;
+    percentInfo = `<div class="small">⚠️ ${strength} • <b class="mono">${Math.round(pct*100)}%</b> OFF → traktowane jako <b>FEJK</b></div>`;
   }else{
-    percentInfo = `<div class="small">🔥 ${strength} • <b class="mono">${Math.round(pct*100)}%</b> FULL</div>`;
+    percentInfo = `<div class="small">🔥 ${strength} • <b class="mono">${Math.round(pct*100)}%</b> OFF</div>`;
   }
 }
 
