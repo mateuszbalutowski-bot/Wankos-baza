@@ -475,11 +475,9 @@
         </div>
 
         <div class="legend">
-          <span class="tag red">OFF - możliwy FULL</span>
-          <span class="tag yellow">OFF/MIX - podejrzana</span>
-          <span class="tag green">DEFF / FEJK</span>
-          <span class="tag blue">Niezidentyfikowany</span>
-        </div>
+  <span class="tag red">OFF - realne zagrożenie</span>
+  <span class="tag green">DEFF = FEJK</span>
+</div>
 
         <div class="row">
           <input id="enemySearch" placeholder="Szukaj (np. 626|471)" class="mono"/>
@@ -662,6 +660,7 @@ const FULL_THRESHOLDS = {
   full: 0.80,
   medium: 0.40
 };
+const OFF_DEAD_THRESHOLD = 0.10; // <10% = OFF padł 90%+
 
 /* ===================== UTIL ===================== */
 function nowISO(){ return new Date().toISOString(); }
@@ -1090,10 +1089,15 @@ function estimateDefPower(t){
 function classifyVillage(t){
   const off = estimateOffPower(t);
   const def = estimateDefPower(t);
-  if(off < 250 && def < 250) return "UNKNOWN";
-  if(off > def*1.5 && off > 2500) return "OFF";
-  if(def > off*1.5 && def > 2500) return "DEFF";
-  return "MIX";
+
+  // brak danych / mało wojska = traktujemy jako FEJK (DEFF)
+  if(off < 250 && def < 250) return "DEFF";
+
+  // jeśli OFF ma przewagę i jest sensowny -> OFF
+  if(off > def * 1.2 && off > 2000) return "OFF";
+
+  // reszta = DEFF/FEJK
+  return "DEFF";
 }
 
 function villageColor(type, troops){
@@ -1316,25 +1320,23 @@ async function renderEnemyDB(){
     let label = "";
 
     if(entry.type === "OFF"){
-      const pct = calcFullOffPercent(predicted);
-      const threat = classifyOffThreatByPercent(pct);
+  const pct = calcFullOffPercent(predicted);
+  const threat = classifyOffThreatByPercent(pct);
 
-      if(entry.offKilledAt){
-        const offHours = hoursBetween(entry.offKilledAt, Date.now());
-        label = `OFF padł ${prettyHours(offHours)} temu • ${Math.round(pct*100)}% FULL • ${threat}`;
-      }else{
-        label = `OFF • ${Math.round(pct*100)}% FULL • ${threat}`;
-      }
-    }
-    else if(entry.type === "DEFF"){
-      label = "DEFF - możliwy FEJK";
-    }
-    else if(entry.type === "MIX"){
-      label = "MIX - podejrzana";
-    }
+  if(pct < OFF_DEAD_THRESHOLD){
+    label = `OFF PADŁ (90%+) • ${Math.round(pct*100)}% FULL`;
+  }
+  else if(entry.offKilledAt){
+    const offHours = hoursBetween(entry.offKilledAt, Date.now());
+    label = `OFF padł ${prettyHours(offHours)} temu • ${Math.round(pct*100)}% FULL • ${threat}`;
+  }
+  else{
+    label = `OFF • ${Math.round(pct*100)}% FULL • ${threat}`;
+  }
+}
     else{
-      label = "UNKNOWN";
-    }
+  label = "FEJK (DEFF)";
+}
 
     html += `
       <div class="item" data-coords="${coords}">
@@ -1391,13 +1393,21 @@ async function renderEnemyProfile(coords){
   if(entry.reportTime){
     reportInfo = `<div class="small">Raport: <b class="mono">${prettyHours(hours)} temu</b></div>`;
   }
-
+let fejkInfo = "";
+if(entry.type === "DEFF"){
+  fejkInfo = `<div class="small">🟢 Wioska DEFF → traktowana jako FEJK</div>`;
+}
   let percentInfo = "";
   if(entry.type === "OFF"){
-    const pct = calcFullOffPercent(predicted);
-    const threat = classifyOffThreatByPercent(pct);
+  const pct = calcFullOffPercent(predicted);
+  const threat = classifyOffThreatByPercent(pct);
+
+  if(pct < OFF_DEAD_THRESHOLD){
+    percentInfo = `<div class="small">🔥 OFF padł (90%+) • zostało: <b class="mono">${Math.round(pct*100)}%</b> FULL</div>`;
+  }else{
     percentInfo = `<div class="small">OFF prognoza: <b class="mono">${Math.round(pct*100)}%</b> FULL • <span class="tag ${threatColor(threat)}">${threat}</span></div>`;
   }
+}
 
   const admin = await isAdmin();
 
@@ -1411,6 +1421,7 @@ async function renderEnemyProfile(coords){
       <div class="small">Aktualizacja: <span class="mono">${new Date(entry.updatedAt).toLocaleString()}</span></div>
       ${reportInfo}
       ${offKilledInfo}
+${fejkInfo}
 
       ${admin ? `
       <div class="row" style="margin-top:12px;">
