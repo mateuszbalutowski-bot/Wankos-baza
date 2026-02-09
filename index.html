@@ -2019,7 +2019,6 @@ async function switchTab(name){
   document.getElementById("tab-"+name).style.display="block";
 
   if(name === "enemydb"){
-    await renderEnemyDB();
     await renderTopEnemySources();
   }
 
@@ -2345,7 +2344,7 @@ document.getElementById("btnResetLabels").addEventListener("click", async ()=>{
   toast("Reset", "Usunięto globalne etykiety.");
   await updateTribeLabelsCount();
 
-  document.getElementById("labelsSummary").innerHTML = `<div class="item small">Brak danych.</div>`;
+ 
   document.getElementById("threatBoard").innerHTML = `<div class="item small">Brak analizy. Wklej etykiety w zakładce "Etykiety Ataków".</div>`;
   document.getElementById("enemyTopSources").innerHTML = `<div class="item small">Brak danych.</div>`;
 });
@@ -2429,7 +2428,6 @@ async function init(){
 
   await switchTab("labels");
   await renderTokenStats();
-  await renderEnemyDB();
 }
 
 init();
