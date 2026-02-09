@@ -444,6 +444,24 @@
       </div>
     </div>
 
+<div class="divider"></div>
+
+<div class="item" id="toggleTopSources" style="cursor:pointer;">
+  <div class="inline">
+    <div style="font-weight:900;">🔥 Najbardziej aktywne wioski (źródła ataków)</div>
+    <span class="tag blue" id="topSourcesArrow">▼</span>
+  </div>
+  <div class="small" style="margin-top:6px;opacity:.8;">
+    Ranking globalny na podstawie etykiet plemienia.
+  </div>
+</div>
+
+<div id="topSourcesPanel" class="hidden">
+  <div id="enemyTopSources" class="listBox">
+    <div class="item small">Brak danych.</div>
+  </div>
+</div>
+
     <!-- TAB: ENEMY DB -->
     <div class="tabPanel" id="tab-enemydb" style="display:none;">
       <div class="card">
@@ -469,16 +487,7 @@
         </div>
 
         <div id="enemyList" class="listBox"></div>
-<div class="divider"></div>
 
-<h2>🔥 Najbardziej aktywne wioski (źródła ataków)</h2>
-<div class="hint">
-  Ranking globalny na podstawie etykiet plemienia. Pokazuje też ile ataków idzie na Twoje wioski.
-</div>
-
-<div id="enemyTopSources" class="listBox">
-  <div class="item small">Brak danych.</div>
-</div>
         <div class="divider"></div>
 
         <h2>🎯 Profil wioski</h2>
@@ -2043,11 +2052,11 @@ async function switchTab(name){
   document.querySelector(`.tab[data-tab="${name}"]`).classList.add("active");
   document.getElementById("tab-"+name).style.display="block";
 
-  if(name === "enemydb"){
-    await renderTopEnemySources();
-  }
 
-  if(name === "analysis") await renderThreatBoard();
+  if(name === "analysis"){
+  await renderThreatBoard();
+  // ranking ładuje się dopiero po rozwinięciu spoilera
+}
   if(name === "notes") await renderTokenStats();
 
   if(name === "settings"){
@@ -2059,6 +2068,22 @@ async function switchTab(name){
 /* ===================== EVENTS ===================== */
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click", async ()=> await switchTab(tab.getAttribute("data-tab")));
+});
+
+document.getElementById("toggleTopSources").addEventListener("click", async ()=>{
+  const panel = document.getElementById("topSourcesPanel");
+  const arrow = document.getElementById("topSourcesArrow");
+
+  const isHidden = panel.classList.contains("hidden");
+
+  if(isHidden){
+    panel.classList.remove("hidden");
+    arrow.textContent = "▲";
+    await renderTopEnemySources();
+  }else{
+    panel.classList.add("hidden");
+    arrow.textContent = "▼";
+  }
 });
 
 /* ===== AUTH EVENTS ===== */
