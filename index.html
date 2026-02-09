@@ -665,13 +665,6 @@ const OFF_DEAD_THRESHOLD = 0.10; // <10% = OFF padł 90%+
 /* ===================== UTIL ===================== */
 function nowISO(){ return new Date().toISOString(); }
 
-function offStrengthLabel(pct){
-  if(pct < OFF_DEAD_THRESHOLD) return "OFF PADŁ (90%+)";
-  if(pct >= 0.80) return "FULL OFF";
-  if(pct >= 0.65) return "3/4 OFF";
-  if(pct >= 0.40) return "1/2 OFF";
-  return "SŁABY OFF";
-}
 
 function isOffFejk(pct){
   return pct < 0.40; // SŁABY OFF i PADŁ traktujemy jako FEJK
@@ -1151,6 +1144,17 @@ function threatColor(threat){
   if(threat === "FULL") return "red";
   if(threat === "MEDIUM") return "yellow";
   return "green";
+}
+function offStrengthLabel(pct){
+  if(pct >= 0.90) return "FULL OFF";
+  if(pct >= 0.75) return "3/4 OFF";
+  if(pct >= 0.50) return "1/2 OFF";
+  if(pct >= 0.25) return "SŁABY OFF";
+  return "PADŁ OFF";
+}
+
+function isOffFejk(pct){
+  return pct < 0.50; // np. wszystko poniżej 50% uznajemy za fejk
 }
 function repeatColor(rep){
   rep = Number(rep || 0);
