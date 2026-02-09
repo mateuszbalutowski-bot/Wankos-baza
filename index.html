@@ -654,13 +654,13 @@ const BUILD_TIME = {
   catapult: CORE_BUILD_TIME.catapult / WORLD_SPEED
 };
 
-const FULL_OFF = {
+cconst FULL_OFF = {
   axe: 6000,
   light: 2800,
   ram: 400
-const FULL_OFF_POP = 19500;
-
 };
+
+const FULL_OFF_POP = 19500;
 
 const FULL_THRESHOLDS = {
   full: 0.80,
@@ -1162,7 +1162,7 @@ function offStrengthLabel(pct){
   if(pct < 0.85) return "3/4 OFF";
   return "FULL OFF";
 }
-}
+
 
 function isOffFejk(pct){
   return pct < 0.40; // SŁABY OFF i PADŁ traktujemy jako FEJK
