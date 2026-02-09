@@ -506,7 +506,13 @@
           <button id="btnParseTokens">🔍 Wczytaj tokeny</button>
           <button id="btnAddTokens" class="btn2">➕ Dodaj tokeny do bazy</button>
           <button id="btnClearNotes" class="btnGhost">🧹 Wyczyść</button>
-        </div>
+        <div id="tokensLoader" class="hidden" style="margin-top:12px;">
+  <div class="small" id="tokensLoaderText">Ładowanie...</div>
+  <div style="height:10px;border-radius:999px;border:1px solid var(--border);background:rgba(2,6,23,0.4);overflow:hidden;margin-top:8px;">
+    <div id="tokensLoaderBar" style="height:100%;width:0%;background:linear-gradient(90deg, rgba(52,211,153,1), rgba(96,165,250,1));transition:width .2s;"></div>
+  </div>
+</div>
+</div>
 
         <div class="divider"></div>
 
@@ -688,6 +694,23 @@ function prettyHours(hours){
 
 function normalizeNick(nick){
   return String(nick || "").trim();
+}
+
+function showTokensLoader(text="Ładowanie...", pct=0){
+  const box = document.getElementById("tokensLoader");
+  const bar = document.getElementById("tokensLoaderBar");
+  const t = document.getElementById("tokensLoaderText");
+
+  box.classList.remove("hidden");
+  t.textContent = text;
+  bar.style.width = `${pct}%`;
+}
+
+function hideTokensLoader(){
+  const box = document.getElementById("tokensLoader");
+  const bar = document.getElementById("tokensLoaderBar");
+  box.classList.add("hidden");
+  bar.style.width = "0%";
 }
 function showLabelsLoader(text="Ładowanie...", pct=0){
   const box = document.getElementById("labelsLoader");
@@ -2235,6 +2258,75 @@ document.getElementById("btnParseTokens").addEventListener("click", async ()=>{
 });
 
 document.getElementById("btnAddTokens").addEventListener("click", async ()=>{
+  if(!(await isAdmin())){
+    toast("Brak dostępu", "Tylko admin może dodawać tokeny.");
+    return;
+  }
+
+  const btn = document.getElementById("btnAddTokens");
+  btn.disabled = true;
+
+  try{
+    showTokensLoader("Wyszukiwanie tokenów...", 5);
+
+    const text = document.getElementById("notesInput").value;
+    const tokens = extractTokens(text);
+
+    if(tokens.length === 0){
+      hideTokensLoader();
+      toast("Brak tokenów", "Nie wykryto HN1/HN2.");
+      return;
+    }
+
+    showTokensLoader(`Dekodowanie tokenów (${tokens.length})...`, 15);
+
+    const db = await loadDB();
+    let added = 0;
+
+    for(let i=0; i<tokens.length; i++){
+      const token = tokens[i];
+
+      const pct = 15 + Math.floor((i / tokens.length) * 70);
+      showTokensLoader(`Dodawanie tokenów (${i+1}/${tokens.length})...`, pct);
+
+      try{
+        const decoded = decodeHN(token);
+        const coords = `${decoded.x}|${decoded.y}`;
+        const troops = troopsArrayToObj(decoded.u);
+        const type = classifyVillage(troops);
+
+        db[coords] = {
+          coords,
+          troops,
+          troopsAfter: troops,
+          type,
+          updatedAt: nowISO(),
+          token
+        };
+
+        added++;
+      }catch(e){}
+    }
+
+    showTokensLoader("Zapisywanie do Supabase...", 92);
+
+    await saveDB(db);
+
+    showTokensLoader("Gotowe!", 100);
+
+    setTimeout(()=> hideTokensLoader(), 600);
+
+    toast("Baza", `Dodano/zaaktualizowano: ${added} wiosek.`);
+    await renderTokenStats();
+
+  }catch(e){
+    console.error(e);
+    hideTokensLoader();
+    toast("Błąd", "Nie udało się dodać tokenów.");
+  }finally{
+    btn.disabled = false;
+  }
+});
   if(!(await isAdmin())){
     toast("Brak dostępu", "Tylko admin może dodawać tokeny.");
     return;
