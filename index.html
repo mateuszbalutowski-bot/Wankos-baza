@@ -2327,46 +2327,7 @@ document.getElementById("btnAddTokens").addEventListener("click", async ()=>{
     btn.disabled = false;
   }
 });
-  if(!(await isAdmin())){
-    toast("Brak dostępu", "Tylko admin może dodawać tokeny.");
-    return;
-  }
-
-  const text = document.getElementById("notesInput").value;
-  const tokens = extractTokens(text);
-
-  if(tokens.length === 0){
-    toast("Brak tokenów", "Nie wykryto HN1/HN2.");
-    return;
-  }
-
-  const db = await loadDB();
-  let added = 0;
-
-  for(const token of tokens){
-    try{
-      const decoded = decodeHN(token);
-      const coords = `${decoded.x}|${decoded.y}`;
-      const troops = troopsArrayToObj(decoded.u);
-      const type = classifyVillage(troops);
-
-      db[coords] = {
-        coords,
-        troops,
-        troopsAfter: troops,
-        type,
-        updatedAt: nowISO(),
-        token
-      };
-
-      added++;
-    }catch(e){}
-  }
-
-  await saveDB(db);
-  toast("Baza", `Dodano/zaaktualizowano: ${added} wiosek.`);
-  await renderTokenStats();
-});
+ 
 
 /* ===== ENEMY DB TAB ===== */
 document.getElementById("btnEnemySearch").addEventListener("click", ()=>{
