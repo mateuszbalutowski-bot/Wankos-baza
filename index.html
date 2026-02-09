@@ -409,15 +409,15 @@
   </div>
 </div>
 
-        <div class="divider"></div>
+       <div class="divider"></div>
 
-        <h2>📌 Podsumowanie</h2>
-<div style="margin-top:12px;font-size:14px;font-weight:900;opacity:.9;">
+<div style="margin-top:6px;font-size:14px;font-weight:900;opacity:.9;">
   Etykiet w bazie plemienia: <b class="mono" id="tribeLabelsCount">...</b>
 </div>
-        <div id="labelsSummary" class="listBox">
-          <div class="item small">Brak danych.</div>
-        </div>
+
+<div class="hint" style="margin-top:8px;">
+  Po dodaniu etykiet przejdź do zakładki <b>Analiza Etykiet</b>.
+</div>
       </div>
     </div>
 
@@ -2157,24 +2157,6 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
 
     showLabelsLoader("Generowanie podsumowania...", 95);
 
-    // podsumowanie tylko nowych
-    const summary = document.getElementById("labelsSummary");
-    const byDef = groupBy(parsed, a=>a.defender);
-
-    let html = "";
-    for(const def in byDef){
-      html += `<div class="item">
-        <div class="inline">
-          <div>
-            <div class="mono"><b>${escapeHtml(def)}</b></div>
-            <div class="small">Nowych ataków: <b class="mono">${byDef[def].length}</b></div>
-          </div>
-          <span class="tag blue">OK</span>
-        </div>
-      </div>`;
-    }
-
-    summary.innerHTML = html;
 
     showLabelsLoader("Gotowe!", 100);
 
@@ -2183,6 +2165,7 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
     }, 600);
 
     toast("Etykiety", `Dodano ataków: ${parsed.length}`);
+document.getElementById("labelsInput").value = "";
 
   }catch(e){
     console.error(e);
@@ -2195,7 +2178,6 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
 
 document.getElementById("btnClearLabels").addEventListener("click", ()=>{
   document.getElementById("labelsInput").value = "";
-  document.getElementById("labelsSummary").innerHTML = `<div class="item small">Brak danych.</div>`;
 });
 
 document.getElementById("btnDeleteMyLabels").addEventListener("click", async ()=>{
