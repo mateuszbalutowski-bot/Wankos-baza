@@ -665,6 +665,18 @@ const OFF_DEAD_THRESHOLD = 0.10; // <10% = OFF padł 90%+
 /* ===================== UTIL ===================== */
 function nowISO(){ return new Date().toISOString(); }
 
+function offStrengthLabel(pct){
+  if(pct < OFF_DEAD_THRESHOLD) return "OFF PADŁ (90%+)";
+  if(pct >= 0.80) return "FULL OFF";
+  if(pct >= 0.65) return "3/4 OFF";
+  if(pct >= 0.40) return "1/2 OFF";
+  return "SŁABY OFF";
+}
+
+function isOffFejk(pct){
+  return pct < 0.40; // SŁABY OFF i PADŁ traktujemy jako FEJK
+}
+
 function toast(title, msg){
   const t = document.getElementById("toast");
   t.innerHTML = `<strong>${escapeHtml(title)}</strong>${escapeHtml(msg)}`;
@@ -1321,22 +1333,29 @@ async function renderEnemyDB(){
 
     let label = "";
 
-    if(entry.type === "OFF"){
+   if(entry.type === "OFF"){
   const pct = calcFullOffPercent(predicted);
-  const threat = classifyOffThreatByPercent(pct);
 
-  if(pct < OFF_DEAD_THRESHOLD){
-    label = `OFF PADŁ (90%+) • ${Math.round(pct*100)}% FULL`;
-  }
-  else if(entry.offKilledAt){
+  const strength = offStrengthLabel(pct);
+  const fejk = isOffFejk(pct);
+
+  if(entry.offKilledAt){
     const offHours = hoursBetween(entry.offKilledAt, Date.now());
-    label = `OFF padł ${prettyHours(offHours)} temu • ${Math.round(pct*100)}% FULL • ${threat}`;
+    label = `${strength} • ${Math.round(pct*100)}% FULL • padł ${prettyHours(offHours)} temu`;
+  }
+  else if(entry.reportTime){
+    const repHours = hoursBetween(entry.reportTime, Date.now());
+    label = `${strength} • ${Math.round(pct*100)}% FULL • raport ${prettyHours(repHours)} temu`;
   }
   else{
-    label = `OFF • ${Math.round(pct*100)}% FULL • ${threat}`;
+    label = `${strength} • ${Math.round(pct*100)}% FULL`;
+  }
+
+  if(fejk){
+    label += ` • FEJK`;
   }
 }
-    else{
+else{
   label = "FEJK (DEFF)";
 }
 
