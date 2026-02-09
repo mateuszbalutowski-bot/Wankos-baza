@@ -908,7 +908,7 @@ async function loadDB(){
   try{
     const { data, error } = await supa
       .from("enemy_tokens")
-      .select("coords, token, type, troops, updated_at, added_by");
+      .select("coords, token, type, troops, updated_at, added_by, report_time").select("coords, token, type, troops, updated_at, added_by, report_time")
 
     if(error) throw error;
 
@@ -944,13 +944,14 @@ async function saveDB(db){
     const v = db[coords];
 
     await supa.from("enemy_tokens").upsert([{
-      coords: coords,
-      token: v.token,
-      type: v.type,
-      troops: v.troops,
-      updated_at: nowISO(),
-      added_by: getCurrentUser()?.nick || "UNKNOWN"
-    }], { onConflict: "coords" });
+  coords: coords,
+  token: v.token,
+  type: v.type,
+  troops: v.troops,
+  updated_at: nowISO(),
+  added_by: getCurrentUser()?.nick || "UNKNOWN"
+report_time: v.reportTime || nowISO(),
+}], { onConflict: "coords" });
   }
 }
 
@@ -1398,14 +1399,16 @@ if(entry.type === "DEFF"){
   fejkInfo = `<div class="small">🟢 Wioska DEFF → traktowana jako FEJK</div>`;
 }
   let percentInfo = "";
-  if(entry.type === "OFF"){
+if(entry.type === "OFF"){
   const pct = calcFullOffPercent(predicted);
-  const threat = classifyOffThreatByPercent(pct);
+  const strength = offStrengthLabel(pct);
 
-  if(pct < OFF_DEAD_THRESHOLD){
-    percentInfo = `<div class="small">🔥 OFF padł (90%+) • zostało: <b class="mono">${Math.round(pct*100)}%</b> FULL</div>`;
+  const fejk = isOffFejk(pct);
+
+  if(fejk){
+    percentInfo = `<div class="small">⚠️ ${strength} • <b class="mono">${Math.round(pct*100)}%</b> FULL → traktowane jako <b>FEJK</b></div>`;
   }else{
-    percentInfo = `<div class="small">OFF prognoza: <b class="mono">${Math.round(pct*100)}%</b> FULL • <span class="tag ${threatColor(threat)}">${threat}</span></div>`;
+    percentInfo = `<div class="small">🔥 ${strength} • <b class="mono">${Math.round(pct*100)}%</b> FULL</div>`;
   }
 }
 
@@ -2332,16 +2335,17 @@ document.getElementById("btnAddTokens").addEventListener("click", async ()=>{
         const coords = `${decoded.x}|${decoded.y}`;
         const troops = troopsArrayToObj(decoded.u);
         const type = classifyVillage(troops);
+const reportTime = decoded.t ? new Date(decoded.t).toISOString() : nowISO();
 
         db[coords] = {
-          coords,
-          troops,
-          troopsAfter: troops,
-          type,
-          updatedAt: nowISO(),
-          token
-        };
-
+  coords,
+  troops,
+  troopsAfter: troops,
+  type,
+  updatedAt: nowISO(),
+  reportTime: reportTime,
+  token
+};
         added++;
       }catch(e){}
     }
