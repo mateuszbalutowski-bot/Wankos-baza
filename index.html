@@ -1440,7 +1440,12 @@ if(entry.type === "OFF"){
   box.innerHTML = `
     <div class="item">
       <div class="inline">
-        <div class="mono" style="font-weight:900;font-size:14px;">${coords}</div>
+        <div class="mono" style="font-weight:900;font-size:14px;">
+  <a href="/game.php?screen=map&x=${coords.split("|")[0]}&y=${coords.split("|")[1]}" target="_blank"
+     style="color:rgba(96,165,250,0.95);text-decoration:underline;">
+     ${coords}
+  </a>
+</div>
         <span class="tag ${villageColor(entry.type, predicted)}">${entry.type}</span>
       </div>
 
