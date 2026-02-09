@@ -2137,21 +2137,38 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
 
     showLabelsLoader("Pobieranie globalnej bazy...", 55);
 
-    // zapis globalny bez duplikatów (lokalnie)
-    const old = await loadGlobalLabels();
-    const combined = old.concat(parsed);
+   // pobierz globalną bazę z supabase (żeby wykryć duplikaty)
+const old = await loadGlobalLabels();
 
-    const uniqueMap = {};
-    for(const a of combined){
-      const key = `${a.owner}|${a.defender}|${a.source}|${a.arrival}|${a.raw}`;
-      uniqueMap[key] = a;
-    }
+// zbiór istniejących rekordów
+const existing = new Set();
+for(const a of old){
+  const key = `${a.owner}|${a.defender}|${a.source}|${a.arrival}|${a.raw}`;
+  existing.add(key);
+}
 
-    showLabelsLoader("Wysyłanie do Supabase...", 80);
+// wybierz tylko nowe rekordy z tego co wkleił user
+const onlyNew = [];
+for(const a of parsed){
+  const key = `${a.owner}|${a.defender}|${a.source}|${a.arrival}|${a.raw}`;
+  if(!existing.has(key)){
+    onlyNew.push(a);
+  }
+}
 
-    // Zmienione: zapisuje tylko unikalne z combined (jak wcześniej),
-    // ale saveGlobalLabels nie pobiera już całej tabeli supabase.
-    await saveGlobalLabels(Object.values(uniqueMap));
+showLabelsLoader("Wysyłanie do Supabase...", 80);
+
+if(onlyNew.length === 0){
+  hideLabelsLoader();
+  btn.disabled = false;
+  toast("Etykiety", "Brak nowych etykiet do dodania.");
+  document.getElementById("labelsInput").value = "";
+  return;
+}
+
+// wysyłamy TYLKO nowe
+await saveGlobalLabels(onlyNew);
+await updateTribeLabelsCount();
     await updateTribeLabelsCount();
 
     showLabelsLoader("Generowanie podsumowania...", 95);
@@ -2163,7 +2180,7 @@ document.getElementById("btnParseLabels").addEventListener("click", async ()=>{
       hideLabelsLoader();
     }, 600);
 
-    toast("Etykiety", `Dodano ataków: ${parsed.length}`);
+    toast("Etykiety", `Dodano nowych ataków: ${onlyNew.length}`);
 document.getElementById("labelsInput").value = "";
 
   }catch(e){
